@@ -1,0 +1,28 @@
+{
+  "name": "mailequran",
+  "version": "1.0.0",
+  "description": "mail me quran api",
+  "main": "index.js",
+  "engine": {
+    "node": "v20.12.2",
+    "npm": "10.5.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mailmequran"
+  ],
+  "author": "Roshbon",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-routemap": "^1.6.0",
+    "nodemon": "^3.1.7",
+    "pg": "^8.13.1",
+    "sequelize": "^6.37.5"
+  }
+}
