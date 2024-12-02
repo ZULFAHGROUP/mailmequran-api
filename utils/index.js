@@ -1,4 +1,3 @@
-
 const bcrypt = require("bcryptjs");
 const saltRound = 10;
 const { v4: uuidv4 } = require("uuid");

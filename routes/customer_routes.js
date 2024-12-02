@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { createCustomer } = require("../controllers/customer_controllers");
+const {
+  createCustomer,
+  verifyEmail,
+} = require("../controllers/customer_controllers");
 
 router.post("/customer", createCustomer);
+router.patch("/verify-email/:email/:otp", verifyEmail);
 
 module.exports = router;

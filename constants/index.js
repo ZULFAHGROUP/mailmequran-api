@@ -18,6 +18,7 @@ const MESSAGES = {
   PASSWORD_RESET_SUCCESS: "Your password has been reset successfully.",
   PASSWORD_RESET_FAILED: "Password reset failed. Please try again later.",
   SOMETHING_WENT_WRONG: "Something went wrong. Please try again later.",
+  OTP_INVALID_EXPIRED: "OTP expired or invalid",
 };
 
 module.exports = MESSAGES;

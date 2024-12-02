@@ -31,3 +31,26 @@ try {
   console.error("Unable to connect to the database:", error);
   process.exit(1);
 }
+
+// error handling middleware
+app.use((err, request, response, next) => {
+  if (err.sqlMessage || err.sqlState) {
+    return response.status(500).json({
+      status: "error",
+      message: messages.SOMETHING_WENT_WRONG,
+    });
+  } else {
+    return response.status(err.code || 400).json({
+      status: "error",
+      message: err.message,
+    });
+  }
+});
+
+// not found routes
+app.use((request, response, next) => {
+  res.status(404).json({
+    status: "error",
+    message: "You got lost",
+  });
+});

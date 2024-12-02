@@ -7,7 +7,7 @@ const createCustomerValidation = (data) => {
     email: Joi.string().email().required(),
     password: Joi.string().required(),
     repeatPassword: Joi.string().valid(Joi.ref("password")).required(),
-    phone: Joi.string().optional().allow(null),
+    phone: Joi.string().optional().allow(null, ""),
   });
 
   return customerSchema.validate(data);
