@@ -47,11 +47,14 @@ const TemporaryCustomers = sequelize.define(
     },
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      allowNull: false,
+      defaultValue: Sequelize.NOW,
     },
+
     updated_at: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      allowNull: false,
+      defaultValue: Sequelize.NOW,
     },
   },
   {

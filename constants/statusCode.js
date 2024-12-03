@@ -1,8 +1,7 @@
-const STATUS_CODES = {
+const StatusCode = {
   OK: 200,
   CREATED: 201,
   ACCEPTED: 202,
-  NO_CONTENT: 204,
 
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
@@ -15,4 +14,4 @@ const STATUS_CODES = {
   SERVICE_UNAVAILABLE: 503,
 };
 
-module.exports = STATUS_CODES;
+module.exports = StatusCode;

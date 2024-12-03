@@ -24,16 +24,13 @@ const Otp = sequelize.define(
     },
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      defaultValue: new Date(),
+      allowNull: false,
     },
   },
   {
     timestamps: false,
-    updatedAt: true,
+    updatedAt: false,
     tableName: "Otp",
   }
 );

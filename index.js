@@ -3,15 +3,15 @@ const express = require("express");
 const app = express();
 const displayRoutes = require("express-routemap");
 const sequelize = require("./config/db");
-const messages = require("./constants");
-const STATUS_CODES = require("./utils/statusCode");
+const messages = require("./constants/messages");
+const statusCode = require("./constants/statusCode");
 const customerRoutes = require("./routes/customer_routes");
 
 app.use(express.json());
 app.use(customerRoutes);
 
 app.get("/", (request, response) => {
-  response.status(STATUS_CODES.OK).json({
+  response.status(statusCode.OK).json({
     success: true,
     message: messages.WELCOME_MESSAGE,
   });
@@ -33,16 +33,16 @@ try {
 }
 
 // error handling middleware
-app.use((err, request, response, next) => {
-  if (err.sqlMessage || err.sqlState) {
-    return response.status(500).json({
+app.use((error, request, response, next) => {
+  if (error.sqlMessage || error.sqlState) {
+    return response.status(statusCode.INTERNAL_SERVER_ERROR).json({
       status: "error",
       message: messages.SOMETHING_WENT_WRONG,
     });
   } else {
-    return response.status(err.code || 400).json({
+    return response.status(error.code || statusCode.BAD_REQUEST).json({
       status: "error",
-      message: err.message,
+      message: error.message,
     });
   }
 });

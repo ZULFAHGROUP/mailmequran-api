@@ -26,6 +26,7 @@
     "express": "^4.21.1",
     "express-routemap": "^1.6.0",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "nodemon": "^3.1.7",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",

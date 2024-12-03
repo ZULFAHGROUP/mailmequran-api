@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const saltRound = 10;
 const { v4: uuidv4 } = require("uuid");
 const generateOtp = () => {
@@ -22,12 +23,23 @@ const comparePassword = (password, hash) => {
     bcrypt.compare(password, hash, (err, result) => {
       if (err) reject(err);
       resolve(result);
+      return result;
     });
   });
+};
+
+const generateJwtToken = (email, expiringTime) => {
+  const token = jwt.sign(
+    { _id: uuidv4(), email: email },
+    process.env.JWT_SECRET,
+    { expiresIn: expiringTime }
+  );
+  return token;
 };
 
 module.exports = {
   generateOtp,
   hashPassword,
   comparePassword,
+  generateJwtToken,
 };

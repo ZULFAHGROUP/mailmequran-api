@@ -47,17 +47,21 @@ const Customers = sequelize.define(
     },
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      allowNull: false,
+      defaultValue: Sequelize.NOW,
     },
+
     updated_at: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      allowNull: false,
+      defaultValue: Sequelize.NOW,
     },
   },
   {
     timestamps: false,
+    updatedAt: false,
     tableName: "Customers",
   }
 );
 
-module.exports = Customers;
+module.exports = { Customers };
