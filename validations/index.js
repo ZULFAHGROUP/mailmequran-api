@@ -61,10 +61,41 @@ const updateCustomerValidation = (data) => {
   return updateCustomerSchema.validate(data);
 };
 
+//forgot password validation
+
+const forgotPasswordValidation = (data) => {
+  const forgotPasswordSchema = Joi.object({
+    email: Joi.string().email().required(),
+  });
+
+  return forgotPasswordSchema.validate(data);
+};
+
+//reset password validation
+
+const resetPasswordValidation = (data) => {
+  const resetPasswordSchema = Joi.object({
+    email: Joi.string().email().required(),
+    otp: Joi.string().length(6).required(),
+    newPassword: Joi.string()
+      .min(6)
+      .pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>])(?=^\S+$).{6,}$/)
+      .required(),
+    repeatPassword: Joi.string()
+      .min(6)
+      .pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>])(?=^\S+$).{6,}$/)
+      .valid(Joi.ref("password"))
+      .required(),
+  });
+
+  return resetPasswordSchema.validate(data);
+};
+
 module.exports = {
   createCustomerValidation,
   verifyEmailAndOtpValidation,
   resendOtpValidation,
   loginValidation,
   updateCustomerValidation,
+  forgotPasswordValidation,
 };

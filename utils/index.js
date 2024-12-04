@@ -2,8 +2,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const saltRound = 10;
 const { v4: uuidv4 } = require("uuid");
-const generateOtp = () => {
-  return Math.floor(100000 + Math.random() * 900000);
+const generateOtp = (expiresInMinutes = 10) => {
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+  return { otp, expiresAt };
 };
 
 const hashPassword = async (password) => {

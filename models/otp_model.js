@@ -27,6 +27,10 @@ const Otp = sequelize.define(
       defaultValue: new Date(),
       allowNull: false,
     },
+    expires_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   },
   {
     timestamps: false,

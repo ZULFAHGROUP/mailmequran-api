@@ -5,6 +5,8 @@ const {
   resendOtpValidation,
   loginValidation,
   updateCustomerValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation,
 } = require("../validations");
 const { v4: uuidv4 } = require("uuid");
 const { hashPassword } = require("../utils");
@@ -55,10 +57,11 @@ const createCustomer = async (request, response, next) => {
       password_salt: salt,
       phone: phone,
     });
-    const otp = generateOtp();
+    const { otp, expiresAt } = generateOtp();
     await Otp.create({
       email: email,
       otp_code: otp,
+      expires_at: expiresAt,
     });
     await sendEmail(
       email,
@@ -94,15 +97,9 @@ const verifyEmail = async (request, response, next) => {
     if (checkIfEmailAndOtpExist == null)
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
 
-    const getOtpCreatedTime = new Date(
-      checkIfEmailAndOtpExist.dataValues.created_at
-    ).getTime(); //in milliseconds
-    const todaysDate = new Date().getTime(); //in milliseconds
-    const differenceInMIlliseconds = todaysDate - getOtpCreatedTime;
-    const minutesDifference = Math.floor(
-      differenceInMIlliseconds / (1000 * 60)
-    ); //convert to minutes
-    if (minutesDifference > otpExpiringTimeInMinutes)
+    const currentTime = new Date();
+    const { expires_at } = checkIfEmailAndOtpExist.dataValues;
+    if (currentTime > new Date(expires_at))
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
 
     const tempCustomer = await TemporaryCustomers.findOne({
@@ -157,21 +154,15 @@ const resendOtp = async (request, response, next) => {
     if (checkIfEmailAndOtpExist == null)
       throw new Error("This process failed. Please try again");
 
-    const getOtpCreatedTime = new Date(
-      checkIfEmailAndOtpExist.dataValues.created_at
-    ).getTime(); //in milliseconds
-    const todaysDate = new Date().getTime(); //in milliseconds
-    const differenceInMIlliseconds = todaysDate - getOtpCreatedTime;
-    const minutesDifference = Math.floor(
-      differenceInMIlliseconds / (1000 * 60)
-    ); //convert to minutes
-    if (minutesDifference < otpExpiringTimeInMinutes)
-      throw new Error("your Otp has not expired");
+    const currentTime = new Date();
+    const { expires_at } = checkIfEmailAndOtpExist.dataValues;
+    if (currentTime < new Date(expires_at))
+      throw new Error("your OTP has not expired");
 
     const newOtp = checkIfEmailAndOtpExist.dataValues.otp_code;
-    console.log(newOtp);
+    const { expiresAt } = generateOtp();
 
-    await Otp.update({ created_at: new Date() }, { where: { email } });
+    await Otp.update({ expires_at: expiresAt }, { where: { email } });
 
     await sendEmail(
       email,
@@ -272,6 +263,75 @@ const getCustomer = async (request, response, next) => {
       status: true,
       message: messages.CUSTOMER_FOUND,
       data: customer,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const startForgetPassword = async (request, response, next) => {
+  try {
+    const { email } = request.params;
+
+    const { error } = forgotPasswordValidation(request.params);
+    if (error !== undefined)
+      throw new Error(
+        error.details[0].message || messages.SOMETHING_WENT_WRONG
+      );
+    const { otp, expiresAt } = generateOtp();
+    await Otp.create({ email: email, otp_code: otp, expires_at: expiresAt });
+    await sendEmail(
+      email,
+      `Hi , Your OTP is ${otp}. Please use this to reset your password`,
+      "Password Reset"
+    );
+
+    response.status(statusCode.OK).json({
+      status: true,
+      message: "Forget Password request sent successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const completeForgetPassword = async () => {
+  try {
+    const { email, otp, newPassword } = request.body;
+    const { error } = resetPasswordValidation(request.body);
+    if (error !== undefined)
+      throw new Error(
+        error.details[0].message || messages.SOMETHING_WENT_WRONG
+      );
+    const checkIfEmailAndOtpExist = await Otp.findOne({
+      where: { email: email, otp_code: otp },
+    });
+
+    if (checkIfEmailAndOtpExist == null)
+      throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+    const currentTime = new Date();
+    const { expires_at } = checkIfEmailAndOtpExist.dataValues;
+    if (currentTime > new Date(expires_at))
+      throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+
+    const customer = await Customers.findOne({ where: { email } });
+    if (customer == null) throw new Error(messages.SOMETHING_WENT_WRONG);
+    const [hash, salt] = await hashPassword(newPassword);
+    await Customers.update(
+      { password_hash: hash, password_salt: salt },
+      { where: { email } }
+    );
+    await Otp.destroy({ where: { email, otp_code: otp } });
+    await sendEmail(
+      email,
+      `Hi, \n\nYour password has been reset successfully.\n\nIf you did not perform this action, please contact our support team immediately.`,
+      "Password Reset Successful"`Hi , Your password has been reset successfully`,
+      "Password Reset Successful"
+    );
+
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.PASSWORD_RESET_SUCCESSFUL,
     });
   } catch (error) {
     next(error);
