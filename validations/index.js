@@ -84,12 +84,32 @@ const resetPasswordValidation = (data) => {
     repeatPassword: Joi.string()
       .min(6)
       .pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>])(?=^\S+$).{6,}$/)
-      .valid(Joi.ref("password"))
+      .valid(Joi.ref("newPassword"))
       .required(),
   });
 
   return resetPasswordSchema.validate(data);
 };
+
+const preferenceValidation = (data) => {
+  const preferenceSchema = Joi.object({
+    language: Joi.boolean().required(),
+    timezone: Joi.string().max(100).required(),
+    frequency: Joi.string().valid("daily", "weekly", "monthly").required(),
+    time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required(),
+    verseCount: Joi.number().integer().positive().required(),
+  });
+  return preferenceSchema.validate(data);
+};
+//update preference schema
+
+const updatePreferenceValidation = (data) => {
+  const updatePreferenceSchema = Joi.object({})
+
+  return updatePreferenceSchema.validate(data)
+}
 
 module.exports = {
   createCustomerValidation,
@@ -98,4 +118,7 @@ module.exports = {
   loginValidation,
   updateCustomerValidation,
   forgotPasswordValidation,
+  resetPasswordValidation,
+  preferenceValidation,
+  updatePreferenceValidation,
 };

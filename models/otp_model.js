@@ -13,10 +13,6 @@ const Otp = sequelize.define(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      references: {
-        model: "TemporaryCustomers",
-        key: "email",
-      },
     },
     otp_code: {
       type: DataTypes.STRING,

@@ -3,6 +3,7 @@ const Messages = {
   CUSTOMER_EXIST: "A customer already exists with this email.",
   CUSTOMER_UPDATED: "Customer updated successfully.",
   CUSTOMER_FOUND: "Customer found successfully.",
+  CUSTOMER_PREFERENCE_CREATED: "Customer preference created successfully.",
   OTP_SENT: "An OTP has been sent to your email.",
   OTP_INVALID_OR_EXPIRED: "Invalid or expired OTP.",
   EMAIL_VERIFIED: "Email verified successfully.",

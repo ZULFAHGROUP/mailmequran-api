@@ -7,17 +7,18 @@ const {
   updateCustomerValidation,
   forgotPasswordValidation,
   resetPasswordValidation,
+  preferenceValidation,
 } = require("../validations");
 const { v4: uuidv4 } = require("uuid");
 const { hashPassword } = require("../utils");
 const { TemporaryCustomers } = require("../models/temporary_customers");
 const { Otp } = require("../models/otp_model");
 const { Customers } = require("../models/customer_model");
+const { Preference, Preferences } = require("../models/preference_model");
 const sequelize = require("../config/db");
 const messages = require("../constants/messages");
 const statusCode = require("../constants/statusCode");
 const { sendEmail } = require("../services/email");
-const otpExpiringTimeInMinutes = 10;
 const jwtExpiringTime = "1h";
 
 const createCustomer = async (request, response, next) => {
@@ -279,7 +280,7 @@ const startForgetPassword = async (request, response, next) => {
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
     const { otp, expiresAt } = generateOtp();
-    await Otp.create({ email: email, otp_code: otp, expires_at: expiresAt });
+    await Otp.create({ email, otp_code: otp, expires_at: expiresAt });
     await sendEmail(
       email,
       `Hi , Your OTP is ${otp}. Please use this to reset your password`,
@@ -295,7 +296,7 @@ const startForgetPassword = async (request, response, next) => {
   }
 };
 
-const completeForgetPassword = async () => {
+const completeForgetPassword = async (request, response, next) => {
   try {
     const { email, otp, newPassword } = request.body;
     const { error } = resetPasswordValidation(request.body);
@@ -311,6 +312,7 @@ const completeForgetPassword = async () => {
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
     const currentTime = new Date();
     const { expires_at } = checkIfEmailAndOtpExist.dataValues;
+
     if (currentTime > new Date(expires_at))
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
 
@@ -338,6 +340,69 @@ const completeForgetPassword = async () => {
   }
 };
 
+const customerPreference = async (request, response, next) => {
+  try {
+    const { customer_id } = request.params;
+    const { language, timezone, frequency, time, verseCount } = request.body;
+    const { error } = preferenceValidation(request.body);
+    if (error !== undefined)
+      throw new Error(
+        error.details[0].message || messages.SOMETHING_WENT_WRONG
+      );
+    await Preferences.create({
+      customer_id: customer_id,
+      preference_id: uuidv4(),
+      is_language: language,
+      timezone: timezone,
+      frequency: frequency,
+      selected_time: time,
+      verse_count: verseCount,
+    });
+
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.CUSTOMER_PREFERENCE_CREATED,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updatePreference = async (request, response, next) => {
+  try {
+    const { customer_id } = request.params;
+    const data = request.body;
+    const { error } = preferenceValidation(data);
+    if (error !== undefined)
+      throw new Error(
+        error.details[0].message || messages.SOMETHING_WENT_WRONG
+      );
+    const update = {};
+    if (data.language && data.language.trim() !== "")
+      update.is_language = data.language;
+    if (data.timezone && data.timezone.trim() !== "")
+      update.timezone = data.timezone;
+    if (data.frequency && data.frequency.trim() !== "")
+      update.frequency = data.frequency;
+    if (data.time && data.time.trim() !== "") update.selected_time = data.time;
+    if (data.verseCount && data.verseCount.trim() !== "")
+      update.verse_count = data.verseCount;
+    if (Object.keys(updates).length === 0)
+      throw new Error("No valid fields provided for update.");
+    await Preferences.update(
+      { update },
+      { where: { customer_id: customer_id } }
+    );
+
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.CUSTOMER_PREFERENCE_UPDATED,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createCustomer,
   verifyEmail,
@@ -345,4 +410,8 @@ module.exports = {
   login,
   updateCustomer,
   getCustomer,
+  startForgetPassword,
+  completeForgetPassword,
+  customerPreference,
+  updatePreference,
 };
