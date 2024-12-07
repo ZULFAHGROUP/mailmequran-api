@@ -40,10 +40,19 @@ app.use((error, request, response, next) => {
       message: messages.SOMETHING_WENT_WRONG,
     });
   } else {
-    return response.status(error.code || statusCode.BAD_REQUEST).json({
-      status: "error",
-      message: error.message,
-    });
+    if(error.includes(isVerify)){
+      return response.status(statusCode.BAD_REQUEST).json({
+        status: "error",
+        message: error.message,
+        isVerify: error.isVerify
+      });
+    }else{
+      return response.status(error.code || statusCode.BAD_REQUEST).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+    
   }
 });
 

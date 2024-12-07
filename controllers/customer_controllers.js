@@ -25,11 +25,8 @@ const createCustomer = async (request, response, next) => {
   try {
     const { surname, othernames, email, password, phone } = request.body;
     const { error } = createCustomerValidation(request.body);
-    if (error != undefined)
-      throw new Error(
-        error.details[0].message || messages.SOMETHING_WENT_WRONG
-      );
-
+    if (error != undefined) throw new Error(error.details[0].message || messages.SOMETHING_WENT_WRONG);
+    
     const [customerExistence, tempCustomerExistence] = await Promise.all([
       Customers.findOne({ where: { email } }),
       TemporaryCustomers.findOne({ where: { email } }),
@@ -43,10 +40,12 @@ const createCustomer = async (request, response, next) => {
     // });
 
     if (customerExistence != null) throw new Error(messages.CUSTOMER_EXIST);
-    if (tempCustomerExistence != null)
-      throw new Error(
-        "An account with this email has already been created please verify with otp"
-      );
+    if (tempCustomerExistence != null){
+        const errData = new Error()
+        errData.message = "An account with this email has already been created please verify with otp"
+        errData.isVerify = messages.OTP_VERIFY_CODE
+        throw errData
+    }
 
     const [hash, salt] = await hashPassword(password);
     await TemporaryCustomers.create({
@@ -64,7 +63,7 @@ const createCustomer = async (request, response, next) => {
       otp_code: otp,
       expires_at: expiresAt,
     });
-    await sendEmail(
+    sendEmail(
       email,
       `<p><strong>Your verification code is:</strong> <strong>${otp}</strong></p>
       <p>Please use this code to verify your email address.</p>
@@ -77,26 +76,28 @@ const createCustomer = async (request, response, next) => {
       message: messages.OTP_SENT,
     });
   } catch (error) {
-    console.log("error: ", error);
+   
     next(error);
   }
 };
+
+
 
 const verifyEmail = async (request, response, next) => {
   const transaction = await sequelize.transaction();
   try {
     const { email, otp } = request.params;
     const { error } = verifyEmailAndOtpValidation(request.params);
-    if (error != undefined)
+    if (error != undefined){
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+      }
     const checkIfEmailAndOtpExist = await Otp.findOne({
       where: { email: email, otp_code: otp },
     });
 
-    if (checkIfEmailAndOtpExist == null)
-      throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+    if (checkIfEmailAndOtpExist == null) throw new Error(messages.OTP_INVALID_OR_EXPIRED);
 
     const currentTime = new Date();
     const { expires_at } = checkIfEmailAndOtpExist.dataValues;
@@ -130,7 +131,7 @@ const verifyEmail = async (request, response, next) => {
     await transaction.commit();
 
     //send email
-    await sendEmail(
+    sendEmail(
       email,
       `<p>Your email address has been successfully verified.</p>
       <p>Welcome to MAIL ME QURAN APP</p> `,
@@ -142,6 +143,7 @@ const verifyEmail = async (request, response, next) => {
       message: messages.CUSTOMER_CREATED,
     });
   } catch (error) {
+    await transaction.rollback();
     next(error);
   }
 };
@@ -152,8 +154,7 @@ const resendOtp = async (request, response, next) => {
     const { email } = request.params;
     const { error } = resendOtpValidation(request.params);
     const checkIfEmailAndOtpExist = await Otp.findOne({ where: { email } });
-    if (checkIfEmailAndOtpExist == null)
-      throw new Error("This process failed. Please try again");
+    if (checkIfEmailAndOtpExist == null)  throw new Error("This process failed. Please try again");
 
     const currentTime = new Date();
     const { expires_at } = checkIfEmailAndOtpExist.dataValues;
@@ -165,7 +166,7 @@ const resendOtp = async (request, response, next) => {
 
     await Otp.update({ expires_at: expiresAt }, { where: { email } });
 
-    await sendEmail(
+     sendEmail(
       email,
       `<p><strong>Your new verification code is:</strong> <strong>${newOtp}</strong></p>
       <p>Please use this code to verify your email address.</p>`
@@ -201,8 +202,7 @@ const login = async (request, response, next) => {
     response.setHeader("access_token", token);
     response.status(statusCode.OK).json({
       status: true,
-      message: messages.LOGIN_SUCCESS,
-      data: token,
+      message: messages.LOGIN_SUCCESS
     });
   } catch (error) {
     next(error);
@@ -211,22 +211,22 @@ const login = async (request, response, next) => {
 
 const updateCustomer = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // get the customer_id from the middleware
     const data = request.body;
     const { error } = updateCustomerValidation(data);
     if (error != undefined)
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    const updates = {};
-    if (data.surname && data.surname.trim() !== "")
-      updates.surname = data.surname;
-    if (data.othernames && data.othernames.trim() !== "")
-      updates.othernames = data.othernames;
-    if (data.phone && data.phone.trim() !== "") updates.phone = data.phone;
-    if (Object.keys(updates).length === 0)
-      throw new Error("No valid fields provided for update.");
-    await Customers.update(updates, {
+    // const updates = {};
+    // if (data.surname && data.surname.trim() !== "")
+    //   updates.surname = data.surname;
+    // if (data.othernames && data.othernames.trim() !== "")
+    //   updates.othernames = data.othernames;
+    // if (data.phone && data.phone.trim() !== "") updates.phone = data.phone;
+    // if (Object.keys(updates).length === 0)
+    //   throw new Error("No valid fields provided for update.");
+    await Customers.update(data, {
       where: {
         customer_id: customer_id,
       },
@@ -243,7 +243,7 @@ const updateCustomer = async (request, response, next) => {
 
 const getCustomer = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // get the customer_id from the middleware
     const customer = await Customers.findOne({
       where: { customer_id: customer_id },
       attributes: {
@@ -252,13 +252,11 @@ const getCustomer = async (request, response, next) => {
           "customer_id",
           "password_hash",
           "password_salt",
-          "is_email_verified",
-          "created_at",
           "updated_at",
         ],
       },
     });
-    if (customer == null) throw new Error(messages.CUSTOMER_NOT_FOUND);
+    // if (customer == null) throw new Error(messages.CUSTOMER_NOT_FOUND);
 
     response.status(statusCode.OK).json({
       status: true,
@@ -281,7 +279,7 @@ const startForgetPassword = async (request, response, next) => {
       );
     const { otp, expiresAt } = generateOtp();
     await Otp.create({ email, otp_code: otp, expires_at: expiresAt });
-    await sendEmail(
+     sendEmail(
       email,
       `Hi , Your OTP is ${otp}. Please use this to reset your password`,
       "Password Reset"
@@ -324,7 +322,7 @@ const completeForgetPassword = async (request, response, next) => {
       { where: { email } }
     );
     await Otp.destroy({ where: { email, otp_code: otp } });
-    await sendEmail(
+     sendEmail(
       email,
       `Hi , Your password has been reset successfully`,
       "Password Reset Successful"
@@ -341,7 +339,7 @@ const completeForgetPassword = async (request, response, next) => {
 
 const customerPreference = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // get the customer_id from the middleware
     const { language, timezone, frequency, time, verseCount } = request.body;
     const { error } = preferenceValidation(request.body);
     if (error !== undefined)
