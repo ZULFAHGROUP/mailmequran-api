@@ -326,14 +326,13 @@ const completeForgetPassword = async (request, response, next) => {
     await Otp.destroy({ where: { email, otp_code: otp } });
     await sendEmail(
       email,
-      `Hi, \n\nYour password has been reset successfully.\n\nIf you did not perform this action, please contact our support team immediately.`,
-      "Password Reset Successful"`Hi , Your password has been reset successfully`,
+      `Hi , Your password has been reset successfully`,
       "Password Reset Successful"
     );
 
     response.status(statusCode.OK).json({
       status: true,
-      message: messages.PASSWORD_RESET_SUCCESSFUL,
+      message: messages.PASSWORD_RESET_SUCCESS,
     });
   } catch (error) {
     next(error);

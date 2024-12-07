@@ -21,7 +21,7 @@ router.post("/customer/login", login);
 router.patch("/customer", authorization, updateCustomer);
 router.get("/customer", authorization, getCustomer);
 router.patch("/customer/forget-password/:email", startForgetPassword);
-router.post("/customer/forget-password/complete/", completeForgetPassword);
+router.post("/customer/forget-password/complete", completeForgetPassword);
 router.post("/customer/preference", authorization, customerPreference);
 router.patch("/customer/preference", authorization, updatePreference);
 

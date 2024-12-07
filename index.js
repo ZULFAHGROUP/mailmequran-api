@@ -49,7 +49,7 @@ app.use((error, request, response, next) => {
 
 // not found routes
 app.use((request, response, next) => {
-  res.status(404).json({
+  response.status(404).json({
     status: "error",
     message: "You got lost",
   });
