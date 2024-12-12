@@ -20,7 +20,7 @@ app.get("/", (request, response) => {
 try {
   (async () => {
     await sequelize.authenticate();
-    // await sequelize.sync({ force: true });
+    await sequelize.sync({ force: true });
     console.log("Database connected successfully.");
     app.listen(process.env.APP_PORT, () => {
       displayRoutes(app);
@@ -40,19 +40,18 @@ app.use((error, request, response, next) => {
       message: messages.SOMETHING_WENT_WRONG,
     });
   } else {
-    if(error.includes(isVerify)){
+    if (error.isVerify) {
       return response.status(statusCode.BAD_REQUEST).json({
         status: "error",
         message: error.message,
-        isVerify: error.isVerify
+        isVerify: error.isVerify,
       });
-    }else{
+    } else {
       return response.status(error.code || statusCode.BAD_REQUEST).json({
         status: "error",
         message: error.message,
       });
     }
-    
   }
 });
 

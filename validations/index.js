@@ -93,23 +93,24 @@ const resetPasswordValidation = (data) => {
 
 const preferenceValidation = (data) => {
   const preferenceSchema = Joi.object({
-    language: Joi.boolean().required(),
+    daily_verse_count: Joi.number().integer().positive().required(),
+    start_surah: Joi.number().integer().positive().required(),
+    start_verse: Joi.number().integer().positive().required(),
+    language: Joi.string().required(),
     timezone: Joi.string().max(100).required(),
     frequency: Joi.string().valid("daily", "weekly", "monthly").required(),
-    time: Joi.string()
-      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    schedule_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, "HH:mm:ss")
       .required(),
-    verseCount: Joi.number().integer().positive().required(),
   });
   return preferenceSchema.validate(data);
 };
-//update preference schema
 
 const updatePreferenceValidation = (data) => {
-  const updatePreferenceSchema = Joi.object({})
+  const updatePreferenceSchema = Joi.object({});
 
-  return updatePreferenceSchema.validate(data)
-}
+  return updatePreferenceSchema.validate(data);
+};
 
 module.exports = {
   createCustomerValidation,

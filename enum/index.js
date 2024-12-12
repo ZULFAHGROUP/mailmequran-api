@@ -5,4 +5,10 @@ const Frequency = {
   MONTHLY: "monthly",
 };
 
-module.exports = Frequency;
+const Gmt = {
+  GMT_PLUS_1: "GMT+01:00",
+};
+module.exports = {
+  Frequency,
+  Gmt,
+};

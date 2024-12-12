@@ -23,29 +23,49 @@ const Preferences = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    is_language: {
-      type: DataTypes.BOOLEAN,
+    email: {
+      type: DataTypes.STRING,
       allowNull: false,
+      references: {
+        model: "Customers",
+        key: "email",
+      },
+    },
+    daily_verse_count: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    start_surah: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    start_verse: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    is_language: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "en",
     },
     timezone: {
       type: DataTypes.STRING,
       allowNull: true,
+      defaultValue: "UTC",
     },
     frequency: {
       type: DataTypes.ENUM("daily", "weekly", "monthly"),
       allowNull: false,
     },
-    selected_time: {
-      type: DataTypes.STRING,
+    schedule_time: {
+      type: DataTypes.TIME,
       allowNull: true,
     },
-    verse_count: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
+
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: new Date(),
       allowNull: false,
     },
     updated_at: {
