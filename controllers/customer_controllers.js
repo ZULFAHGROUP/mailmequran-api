@@ -25,6 +25,7 @@ const cron = require("node-cron");
 const moment = require("moment");
 const { Op } = require("sequelize");
 const { getMultipleVerses } = require("../api/quran");
+const { Frequency } = require("../enum");
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -450,10 +451,11 @@ const processEmail = async () => {
         const now = moment();
         const lastSentDate = moment(lastEmail.dataValues.updated_at);
         const diffInDays = now.diff(lastSentDate, "days");
-        if (frequency === "daily" && diffInDays >= 1) sendEmail = true;
-        else if (frequency === "weekly" && diffInDays >= 7) sendEmail = true;
+        if (frequency === Frequency.DAILY && diffInDays >= 1) sendEmail = true;
+        else if (frequency === Frequency.WEEKLY && diffInDays >= 7)
+          sendEmail = true;
         else if (
-          frequency === "monthly" &&
+          frequency === Frequency.MONTHLY &&
           now.month() !== lastSentDate.month()
         )
           sendEmail = true;
@@ -536,10 +538,9 @@ const processEmail = async () => {
 // Function to get the total number of verses in a surah
 async function getTotalVersesInSurah(surah) {
   const surahTotalVerses = {
-    1: 7, // Example for Surah Al-Fatiha
-    2: 286, // Example for Surah Al-Baqarah
-    3: 200, // Example for Surah Aal-e-Imran
-    // Add other surahs as needed
+    1: 7,
+    2: 286,
+    3: 200,
   };
 
   return surahTotalVerses[surah];

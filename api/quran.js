@@ -20,6 +20,7 @@ const getMultipleVerses = async (surah, nextVerse, verseCount) => {
   );
 };
 
+
 module.exports = {
   getMultipleVerses,
 };

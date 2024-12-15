@@ -1,4 +1,3 @@
-// enums.js
 const Frequency = {
   DAILY: "daily",
   WEEKLY: "weekly",
