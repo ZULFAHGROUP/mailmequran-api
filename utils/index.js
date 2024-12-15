@@ -39,9 +39,31 @@ const generateJwtToken = (email, expiringTime) => {
   return token;
 };
 
+const formatVerses = (verses) => {
+  return verses
+    .map(
+      (verse) => `
+        <div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
+          <h3 style="color: #2c3e50;">Chapter: ${verse.chapter}, Verse: ${verse.verse}</h3>
+          <p style="font-size: 18px; color: #8e44ad;">
+            <strong>Arabic:</strong> ${verse.ar}
+          </p>
+          <p style="font-size: 16px; color: #34495e;">
+            <strong>English:</strong> ${verse.en}
+          </p>
+          <p style="font-size: 14px; color: #7f8c8d;">
+            <strong>Translator:</strong> ${verse.translator}
+          </p>
+        </div>
+      `
+    )
+    .join("");
+};
+
 module.exports = {
   generateOtp,
   hashPassword,
   comparePassword,
   generateJwtToken,
+  formatVerses,
 };

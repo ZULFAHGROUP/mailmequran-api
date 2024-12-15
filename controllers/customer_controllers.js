@@ -26,6 +26,7 @@ const moment = require("moment");
 const { Op } = require("sequelize");
 const { getMultipleVerses } = require("../api/quran");
 const { Frequency } = require("../enum");
+const { formatVerses } = require("../utils");
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -508,16 +509,10 @@ const processEmail = async () => {
           startVerseForNextEmail,
           daily_verse_count
         );
-        const formattedMessage = getVerses
-          .map(
-            (verse) =>
-              `Chapter: ${verse.chapter}, Verse: ${verse.verse}\nArabic: ${verse.ar}\nEnglish: ${verse.en}\nTranslator: ${verse.translator}\n\n`
-          )
-          .join("");
+
+        const formattedMessage = formatVerses(getVers);
+
         sendEmail(email, formattedMessage, "your verse for today");
-        console.log(
-          "================================================================"
-        );
 
         if (lastEmail) {
           await Email_logs.update({

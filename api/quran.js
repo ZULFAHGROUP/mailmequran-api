@@ -22,7 +22,6 @@ const getMultipleVerses = (surah, nextVerse, verseCount) => {
 };
 
 
-getMultipleVerses(1, 1, 1);
 module.exports = {
   getMultipleVerses,
 };
