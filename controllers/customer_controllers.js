@@ -419,7 +419,7 @@ const processEmail = async () => {
   try {
     const preferences = await Preferences.findAll({
       where: {
-        schedule_time: "12:20:00",
+        schedule_time: "07:30:00",
         // schedule_time: {
         //   // [Op.lte]: moment().format("HH:mm:ss"),
         // },
@@ -430,7 +430,6 @@ const processEmail = async () => {
       (preference) => preference.dataValues
     );
 
-    // Classic for loop
     for (let i = 0; i < preferencesData.length; i++) {
       const preference = preferencesData[i];
       const {
@@ -445,47 +444,49 @@ const processEmail = async () => {
       const lastEmail = await Email_logs.findOne({
         where: { customer_id },
       });
-      let sendEmail = false;
-      if (lastEmail === null) sendEmail = true;
+      let shouldSendEmail = false;
+
+      if (lastEmail === null) shouldSendEmail = true;
       else {
         const now = moment();
         const lastSentDate = moment(lastEmail.dataValues.updated_at);
         const diffInDays = now.diff(lastSentDate, "days");
-        if (frequency === Frequency.DAILY && diffInDays >= 1) sendEmail = true;
+        if (frequency === Frequency.DAILY && diffInDays >= 1)
+          shouldSendEmail = true;
         else if (frequency === Frequency.WEEKLY && diffInDays >= 7)
-          sendEmail = true;
+          shouldSendEmail = true;
         else if (
           frequency === Frequency.MONTHLY &&
           now.month() !== lastSentDate.month()
         )
-          sendEmail = true;
+          shouldSendEmail = true;
       }
+      console.log("shouldSendEmail", shouldSendEmail);
 
-      // if (sendEmail === true) {
+      // if (shouldSendEmail === true) {
       //   console.log("-----------------------------", typeof start_surah);
       // }
       // Logic to determine if an email should be sent based on frequency
       // if (!lastEmail) {
-      //   sendEmail = true; // Send email if it's the first time
+      //   shouldSendEmail = true; // Send email if it's the first time
       // } else {
       //   const now = moment();
       //   const lastSentDate = moment(lastEmail.dataValues.updated_at);
       //   const diffInDays = now.diff(lastSentDate, "days");
 
-      //   // Check the frequency and determine if we need to send an email
       //   if (frequency === "daily" && diffInDays >= 1) {
-      //     sendEmail = true;
+      //     shouldSendEmail = true;
       //   } else if (frequency === "weekly" && diffInDays >= 7) {
-      //     sendEmail = true;
+      //     shouldSendEmail = true;
       //   } else if (
       //     frequency === "monthly" &&
       //     now.month() !== lastSentDate.month()
       //   ) {
-      //     sendEmail = true;
+      //     shouldSendEmail = true;
       //   }
       // }
 
-      if (sendEmail) {
+      if (shouldSendEmail) {
         const totalVersesInSurah = await getTotalVersesInSurah(start_surah);
 
         let startVerseForNextEmail = 1;
@@ -502,16 +503,21 @@ const processEmail = async () => {
             ? totalVersesInSurah
             : startVerseForNextEmail + daily_verse_count - 1;
 
-        const verses = await getMultipleVerses(
+        const getVerses = await getMultipleVerses(
           start_surah,
           startVerseForNextEmail,
           daily_verse_count
         );
+        const formattedMessage = getVerses
+          .map(
+            (verse) =>
+              `Chapter: ${verse.chapter}, Verse: ${verse.verse}\nArabic: ${verse.ar}\nEnglish: ${verse.en}\nTranslator: ${verse.translator}\n\n`
+          )
+          .join("");
+        sendEmail(email, formattedMessage, "your verse for today");
         console.log(
-          `Sending email to customer: ${customer_id} with ${daily_verse_count}`
+          "================================================================"
         );
-
-        sendEmail(email, verses, "your verse for today");
 
         if (lastEmail) {
           await Email_logs.update({
@@ -546,7 +552,7 @@ async function getTotalVersesInSurah(surah) {
   return surahTotalVerses[surah];
 }
 
-cron.schedule("*/30 * * * *", async () => {
+cron.schedule("*/2 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");
