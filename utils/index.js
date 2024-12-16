@@ -39,7 +39,7 @@ const generateJwtToken = (email, expiringTime) => {
   return token;
 };
 
-const formatVerses = (verses) => {
+const formatVersesWithEnglishAndArabic = (verses) => {
   return verses
     .map(
       (verse) => `
@@ -53,6 +53,21 @@ const formatVerses = (verses) => {
           </p>
           <p style="font-size: 14px; color: #7f8c8d;">
             <strong>Translator:</strong> ${verse.translator}
+          </p>
+        </div>
+      `
+    )
+    .join("");
+};
+
+const formatVersesWithArabic = (verses) => {
+  return verses
+    .map(
+      (verse) => `
+        <div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
+          <h3 style="color: #2c3e50;">Chapter: ${verse.chapter}, Verse: ${verse.verse}</h3>
+          <p style="font-size: 54px; color: #8e44ad;">
+            <strong>Arabic:</strong> ${verse.ar}
           </p>
         </div>
       `
@@ -75,6 +90,7 @@ module.exports = {
   hashPassword,
   comparePassword,
   generateJwtToken,
-  formatVerses,
+  formatVersesWithEnglishAndArabic,
+  formatVersesWithArabic,
   getTotalVersesInSurah,
 };

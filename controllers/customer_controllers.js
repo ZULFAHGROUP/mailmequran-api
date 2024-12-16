@@ -24,10 +24,16 @@ const jwtExpiringTime = "1h";
 const cron = require("node-cron");
 const moment = require("moment");
 const { Op } = require("sequelize");
-const { getMultipleVerses } = require("../api/quran");
 const { Frequency } = require("../enum");
-const { formatVerses } = require("../utils");
+const {
+  formatVersesWithEnglishAndArabic,
+  formatVersesWithArabic,
+} = require("../utils");
 const { getTotalVersesInSurah } = require("../utils");
+const {
+  getMultipleVersesWithArabic,
+  getMultipleVersesWithEnglishAndArabic,
+} = require("../api/quran");
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -341,7 +347,7 @@ const customerPreference = async (request, response, next) => {
       daily_verse_count,
       start_surah,
       start_verse,
-      language,
+      is_language,
       timezone,
       frequency,
       schedule_time,
@@ -362,6 +368,7 @@ const customerPreference = async (request, response, next) => {
       daily_verse_count: daily_verse_count,
       start_surah: start_surah,
       start_verse: start_verse,
+      is_language: is_language,
       frequency: frequency,
       schedule_time: schedule_time,
       created_at: Date.now(),
@@ -385,10 +392,12 @@ const updatePreference = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    await Preferences.update(
-      { update },
-      { where: { customer_id: customer_id } }
-    );
+
+    await Preferences.update(data, {
+      where: {
+        customer_id: customer_id,
+      },
+    });
 
     response.status(statusCode.OK).json({
       status: true,
@@ -420,6 +429,9 @@ const processEmail = async () => {
         email,
         daily_verse_count,
         start_surah,
+        start_verse,
+        is_language,
+        timezone,
         frequency,
         schedule_time,
       } = preference;
@@ -463,13 +475,21 @@ const processEmail = async () => {
             ? totalVersesInSurah
             : startVerseForNextEmail + daily_verse_count - 1;
 
-        const getVerses = await getMultipleVerses(
-          start_surah,
-          startVerseForNextEmail,
-          daily_verse_count
-        );
+        const getVerses = is_language
+          ? await getMultipleVersesWithEnglishAndArabic(
+              start_surah,
+              startVerseForNextEmail,
+              daily_verse_count
+            )
+          : await getMultipleVersesWithArabic(
+              start_surah,
+              startVerseForNextEmail,
+              daily_verse_count
+            );
 
-        const formattedMessage = formatVerses(getVerses);
+        const formattedMessage = is_language
+          ? formatVersesWithEnglishAndArabic(getVerses)
+          : formatVersesWithArabic(getVerses);
 
         sendEmail(email, formattedMessage, "your verse for today");
 
@@ -501,7 +521,7 @@ const processEmail = async () => {
   }
 };
 
-cron.schedule("*/30 * * * *", async () => {
+cron.schedule("*/2 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");

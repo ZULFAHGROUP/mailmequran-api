@@ -1,6 +1,10 @@
 const quran = require("quran");
 
-const getMultipleVerses = (surah, nextVerse, verseCount) => {
+const getMultipleVersesWithEnglishAndArabic = (
+  surah,
+  nextVerse,
+  verseCount
+) => {
   return new Promise((resolve, reject) => {
     let verseToGet = [];
     for (let i = nextVerse; i < nextVerse + verseCount; i++) {
@@ -12,16 +16,37 @@ const getMultipleVerses = (surah, nextVerse, verseCount) => {
       { language: ["en", "ar"] },
       function (err, verses) {
         if (err) {
-          reject(err); 
+          reject(err);
         } else {
-          resolve(verses); 
+          resolve(verses);
         }
       }
     );
   });
 };
 
+const getMultipleVersesWithArabic = (surah, nextVerse, verseCount) => {
+  return new Promise((resolve, reject) => {
+    let verseToGet = [];
+    for (let i = nextVerse; i < nextVerse + verseCount; i++) {
+      verseToGet.push(i);
+    }
+
+    quran.select(
+      { chapter: surah, verse: verseToGet },
+      { language: ["ar"] },
+      function (err, verses) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(verses);
+        }
+      }
+    );
+  });
+};
 
 module.exports = {
-  getMultipleVerses,
+  getMultipleVersesWithEnglishAndArabic,
+  getMultipleVersesWithArabic,
 };

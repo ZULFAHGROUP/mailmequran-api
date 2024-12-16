@@ -46,9 +46,8 @@ const Preferences = sequelize.define(
       defaultValue: 1,
     },
     is_language: {
-      type: DataTypes.STRING,
+      type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: "en",
     },
     timezone: {
       type: DataTypes.STRING,

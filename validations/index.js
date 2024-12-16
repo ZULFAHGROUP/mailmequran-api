@@ -96,7 +96,7 @@ const preferenceValidation = (data) => {
     daily_verse_count: Joi.number().integer().positive().required(),
     start_surah: Joi.number().integer().positive().required(),
     start_verse: Joi.number().integer().positive().required(),
-    language: Joi.string().required(),
+    is_language: Joi.boolean().required(),
     timezone: Joi.string().max(100).required(),
     frequency: Joi.string().valid("daily", "weekly", "monthly").required(),
     schedule_time: Joi.string()
