@@ -510,17 +510,23 @@ const processEmail = async () => {
           daily_verse_count
         );
 
-        const formattedMessage = formatVerses(getVers);
+        const formattedMessage = formatVerses(getVerses);
 
         sendEmail(email, formattedMessage, "your verse for today");
 
         if (lastEmail) {
-          await Email_logs.update({
-            last_sent_surah: start_surah,
-            last_sent_verse: end_verse,
-            updated_at: new Date(),
-            where: { customer_id },
-          });
+          await Email_logs.update(
+            {
+              last_sent_surah: start_surah,
+              last_sent_verse: end_verse,
+              updated_at: new Date(),
+            },
+            {
+              where: {
+                customer_id,
+              },
+            }
+          );
         } else {
           await Email_logs.create({
             customer_id,
