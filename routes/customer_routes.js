@@ -11,6 +11,7 @@ const {
   completeForgetPassword,
   customerPreference,
   updatePreference,
+  randomVerse,
 } = require("../controllers/customer_controllers");
 const { authorization } = require("../middlewares/authorization");
 
@@ -24,5 +25,6 @@ router.patch("/customer/forget-password/:email", startForgetPassword);
 router.post("/customer/forget-password/complete", completeForgetPassword);
 router.post("/customer/preference", authorization, customerPreference);
 router.patch("/customer/preference", authorization, updatePreference);
+router.get("/customer/random-verse", randomVerse);
 
 module.exports = router;

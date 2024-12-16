@@ -10,6 +10,7 @@ const Messages = {
   OTP_INVALID_OR_EXPIRED: "Invalid or expired OTP.",
   EMAIL_VERIFIED: "Email verified successfully.",
   WELCOME_MESSAGE: "Welcome to MAIL ME QURAN APP.",
+  RANDOM_VERSE_FOUND: "Random verse fetched successfully.",
   LOGIN_SUCCESS: "Login successful. Welcome back!",
   LOGIN_FAILED: "Login failed. Please check your credentials.",
   PASSWORD_RESET_SUCCESS: "Your password has been reset successfully.",

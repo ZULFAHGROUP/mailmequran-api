@@ -33,6 +33,7 @@ const { getTotalVersesInSurah } = require("../utils");
 const {
   getMultipleVersesWithArabic,
   getMultipleVersesWithEnglishAndArabic,
+  generateRandomVerse,
 } = require("../api/quran");
 
 const createCustomer = async (request, response, next) => {
@@ -407,6 +408,21 @@ const updatePreference = async (request, response, next) => {
     next(error);
   }
 };
+
+const randomVerse = async (request, response, next) => {
+  try {
+    const data = await generateRandomVerse();
+    console.log(data);
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.RANDOM_VERSE_FOUND,
+      data: data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const processEmail = async () => {
   try {
     const preferences = await Preferences.findAll({
@@ -521,7 +537,7 @@ const processEmail = async () => {
   }
 };
 
-cron.schedule("*/2 * * * *", async () => {
+cron.schedule("*/30 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");
@@ -538,4 +554,5 @@ module.exports = {
   completeForgetPassword,
   customerPreference,
   updatePreference,
+  randomVerse,
 };
