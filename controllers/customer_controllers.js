@@ -27,6 +27,7 @@ const { Op } = require("sequelize");
 const { getMultipleVerses } = require("../api/quran");
 const { Frequency } = require("../enum");
 const { formatVerses } = require("../utils");
+const { getTotalVersesInSurah } = require("../utils");
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -222,14 +223,7 @@ const updateCustomer = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    // const updates = {};
-    // if (data.surname && data.surname.trim() !== "")
-    //   updates.surname = data.surname;
-    // if (data.othernames && data.othernames.trim() !== "")
-    //   updates.othernames = data.othernames;
-    // if (data.phone && data.phone.trim() !== "") updates.phone = data.phone;
-    // if (Object.keys(updates).length === 0)
-    //   throw new Error("No valid fields provided for update.");
+
     await Customers.update(data, {
       where: {
         customer_id: customer_id,
@@ -391,18 +385,6 @@ const updatePreference = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    const update = {};
-    if (data.language && data.language.trim() !== "")
-      update.is_language = data.language;
-    if (data.timezone && data.timezone.trim() !== "")
-      update.timezone = data.timezone;
-    if (data.frequency && data.frequency.trim() !== "")
-      update.frequency = data.frequency;
-    if (data.time && data.time.trim() !== "") update.selected_time = data.time;
-    if (data.verseCount && data.verseCount.trim() !== "")
-      update.verse_count = data.verseCount;
-    if (Object.keys(updates).length === 0)
-      throw new Error("No valid fields provided for update.");
     await Preferences.update(
       { update },
       { where: { customer_id: customer_id } }
@@ -464,31 +446,8 @@ const processEmail = async () => {
       }
       console.log("shouldSendEmail", shouldSendEmail);
 
-      // if (shouldSendEmail === true) {
-      //   console.log("-----------------------------", typeof start_surah);
-      // }
-      // Logic to determine if an email should be sent based on frequency
-      // if (!lastEmail) {
-      //   shouldSendEmail = true; // Send email if it's the first time
-      // } else {
-      //   const now = moment();
-      //   const lastSentDate = moment(lastEmail.dataValues.updated_at);
-      //   const diffInDays = now.diff(lastSentDate, "days");
-
-      //   if (frequency === "daily" && diffInDays >= 1) {
-      //     shouldSendEmail = true;
-      //   } else if (frequency === "weekly" && diffInDays >= 7) {
-      //     shouldSendEmail = true;
-      //   } else if (
-      //     frequency === "monthly" &&
-      //     now.month() !== lastSentDate.month()
-      //   ) {
-      //     shouldSendEmail = true;
-      //   }
-      // }
-
       if (shouldSendEmail) {
-        const totalVersesInSurah = await getTotalVersesInSurah(start_surah);
+        const totalVersesInSurah = getTotalVersesInSurah(start_surah);
 
         let startVerseForNextEmail = 1;
         if (lastEmail) {
@@ -542,18 +501,7 @@ const processEmail = async () => {
   }
 };
 
-// Function to get the total number of verses in a surah
-async function getTotalVersesInSurah(surah) {
-  const surahTotalVerses = {
-    1: 7,
-    2: 286,
-    3: 200,
-  };
-
-  return surahTotalVerses[surah];
-}
-
-cron.schedule("*/2 * * * *", async () => {
+cron.schedule("*/30 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");

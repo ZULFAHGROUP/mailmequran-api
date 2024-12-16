@@ -53,9 +53,9 @@ const loginValidation = (data) => {
 //update customer account
 const updateCustomerValidation = (data) => {
   const updateCustomerSchema = Joi.object({
-    surname: Joi.string().min(3).max(50).optional().allow(),
-    othernames: Joi.string().min(3).max(50).optional().allow(),
-    phone: Joi.string().optional().allow(),
+    surname: Joi.string().min(3).optional(),
+    othernames: Joi.string().min(3).optional(),
+    phone: Joi.string().optional(),
   });
 
   return updateCustomerSchema.validate(data);

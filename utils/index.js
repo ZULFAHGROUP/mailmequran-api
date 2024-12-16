@@ -45,7 +45,7 @@ const formatVerses = (verses) => {
       (verse) => `
         <div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
           <h3 style="color: #2c3e50;">Chapter: ${verse.chapter}, Verse: ${verse.verse}</h3>
-          <p style="font-size: 18px; color: #8e44ad;">
+          <p style="font-size: 54px; color: #8e44ad;">
             <strong>Arabic:</strong> ${verse.ar}
           </p>
           <p style="font-size: 16px; color: #34495e;">
@@ -60,10 +60,21 @@ const formatVerses = (verses) => {
     .join("");
 };
 
+function getTotalVersesInSurah(surah) {
+  const surahTotalVerses = {
+    1: 7,
+    2: 286,
+    3: 200,
+  };
+
+  return surahTotalVerses[surah];
+}
+
 module.exports = {
   generateOtp,
   hashPassword,
   comparePassword,
   generateJwtToken,
   formatVerses,
+  getTotalVersesInSurah,
 };
