@@ -35,6 +35,7 @@ const {
   getMultipleVersesWithEnglishAndArabic,
   generateRandomVerse,
 } = require("../api/quran");
+const { initializePayment, verifyPayment } = require("../services/donate");
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -423,6 +424,47 @@ const randomVerse = async (request, response, next) => {
   }
 };
 
+const initiateDonation = async (request, response, next) => {
+  try {
+    const { email, amount } = request.body;
+
+    if (!email || !amount) {
+      throw new Error("Invalid email or amount");
+    }
+
+    const response = await initializePayment(email, amount);
+
+    response.status(statusCode.OK).json({
+      status: true,
+      message: "Payment initialized successfully",
+      data: {
+        payment_url: response.data.data.authorization_url,
+        access_code: response.data.data.reference,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const verifyDonation = async (request, response, next) => {
+  try {
+    const { reference } = request.params;
+
+    const response = await verifyPayment(reference);
+
+    if (response.data.data.status !== "success") {
+      throw new Error("Invalid transaction or payment failed");
+    }
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.DONATED_SUCCESS,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const processEmail = async () => {
   try {
     const preferences = await Preferences.findAll({
@@ -555,4 +597,6 @@ module.exports = {
   customerPreference,
   updatePreference,
   randomVerse,
+  initiateDonation,
+  verifyDonation,
 };

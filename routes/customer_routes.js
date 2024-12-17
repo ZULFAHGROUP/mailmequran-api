@@ -12,6 +12,8 @@ const {
   customerPreference,
   updatePreference,
   randomVerse,
+  initiateDonation,
+  verifyDonation,
 } = require("../controllers/customer_controllers");
 const { authorization } = require("../middlewares/authorization");
 
@@ -26,5 +28,7 @@ router.post("/customer/forget-password/complete", completeForgetPassword);
 router.post("/customer/preference", authorization, customerPreference);
 router.patch("/customer/preference", authorization, updatePreference);
 router.get("/customer/random-verse", randomVerse);
+router.post("/donation/initiate", initiateDonation);
+router.post("/donation/verify/:reference", verifyDonation);
 
 module.exports = router;

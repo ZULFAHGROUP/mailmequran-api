@@ -75,6 +75,48 @@ const formatVersesWithArabic = (verses) => {
     .join("");
 };
 
+// const formatDailyVerseEmail = (verse) => {
+//   return `
+//     <div style="font-family: Arial, sans-serif; margin: 0 auto; max-width: 600px; padding: 20px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
+//       <div style="text-align: center; margin-bottom: 20px;">
+//         <h2 style="color: #2c3e50; margin-bottom: 10px;">Your Daily Dose of Quranic Verses</h2>
+//         <p style="color: #7f8c8d; font-size: 14px;">Connecting you to the Quran, one verse at a time.</p>
+//       </div>
+//       <!-- Verse Section -->
+//       <div style="margin-bottom: 20px; text-align: center;">
+//         <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 10px;">
+//           Surah: ${verse.chapter}, Verse: ${verse.verse}
+//         </h3>
+//         <p style="font-size: 32px; color: #27ae60; line-height: 1.5;">
+//           <strong>${verse.ar}</strong>
+//         </p>
+//         <p style="font-size: 16px; color: #34495e; margin-top: 10px; line-height: 1.5;">
+//           <em>"${verse.en}"</em>
+//         </p>
+//       </div>
+     
+//       <div style="margin-bottom: 20px; text-align: left;">
+//         <h4 style="color: #2c3e50;">Reflective Question:</h4>
+//         <p style="font-size: 14px; color: #7f8c8d;">
+//           "How can you apply this verse in your life today?"
+//         </p>
+//       </div>
+//       <div style="text-align: center; margin-top: 20px;">
+//         <a href="https://mailmequran/settings" style="background-color: #28a745; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px; font-size: 14px;">
+//           Update Delivery Settings
+//         </a>
+//         <a href="https://mailmequran/unsubscribe" style="background-color: #e74c3c; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px;">
+//           Unsubscribe
+//         </a>
+//       </div>
+//        <div style="text-align: center; margin-top: 20px; color: #95a5a6; font-size: 12px;">
+//         <p>May Allah (SWT) bless you for connecting with His words.</p>
+//       </div>
+//     </div>
+//   `;
+// };
+
+
 function getTotalVersesInSurah(surah) {
   const surahTotalVerses = {
     1: 7,
