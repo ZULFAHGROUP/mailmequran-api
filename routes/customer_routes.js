@@ -14,6 +14,9 @@ const {
   randomVerse,
   initiateDonation,
   verifyDonation,
+  createBookmark,
+  getBookmarks,
+  deleteBookmark,
 } = require("../controllers/customer_controllers");
 const { authorization } = require("../middlewares/authorization");
 
@@ -30,5 +33,8 @@ router.patch("/customer/preference", authorization, updatePreference);
 router.get("/customer/random-verse", randomVerse);
 router.post("/donation/initiate", initiateDonation);
 router.post("/donation/verify/:reference", verifyDonation);
+router.post("/customer/bookmark", authorization, createBookmark);
+router.get("/customer/bookmarks", authorization, getBookmarks);
+router.delete("/customer/bookmark/:id", authorization, deleteBookmark);
 
 module.exports = router;

@@ -465,6 +465,91 @@ const verifyDonation = async (request, response, next) => {
   }
 };
 
+const createBookmark = async (request, response, next) => {
+  try {
+    const { customer_id } = request.params;
+    const { surah, verse } = request.body;
+
+    const existingBookmark = await Bookmark.findOne({
+      where: { customer_id, surah, verse },
+    });
+    if (existingBookmark !== null) {
+      throw new Error(`Bookmark already exists`);
+    }
+
+    const bookmark = await Bookmark.create({
+      customer_id,
+      surah,
+      verse,
+      created_at: new Date(),
+    });
+
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.BOOKMARK_CREATED,
+      data: bookmark,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+const getUserBookmarks = async (request, response, next) => {
+  try {
+    const { customer_id } = request.params;
+
+    const bookmarks = await Bookmark.findAll({
+      where: {
+        customer_id,
+        is_deleted: false,
+      },
+    });
+    response.status(statusCode.OK).json({
+      status: true,
+      message: messages.BOOKMARKS_FETCHED,
+      data: bookmarks,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteBookmark = async (request, response, next) => {
+  try {
+    const { bookmark_id, customer_id } = request.params;
+
+    const bookmark = await Bookmark.findOne({
+      where: {
+        customer_id,
+        id: bookmark_id,
+        is_deleted: false,
+      },
+    });
+
+    if (bookmark !== null) {
+      throw new Error("Bookmark not found");
+    }
+
+    await Bookmark.update(
+      { is_deleted: true },
+      {
+        where: {
+          customer_id,
+          id: bookmark_id,
+        },
+      }
+    );
+
+    response.status(statusCode).json({
+      status: true,
+      message: messages.BOOKMARK_DELETED,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const processEmail = async () => {
   try {
     const preferences = await Preferences.findAll({
@@ -520,12 +605,14 @@ const processEmail = async () => {
         const totalVersesInSurah = getTotalVersesInSurah(start_surah);
 
         let startVerseForNextEmail = 1;
+        let next_surah = 1;
         if (lastEmail) {
           startVerseForNextEmail = lastEmail.dataValues.last_sent_verse + 1;
         }
 
-        if (startVerseForNextEmail > totalVersesInSurah) {
-          start_surah += 1;
+        if (startVerseForNextEmail >= totalVersesInSurah) {
+          next_surah = start_surah + 1;
+          startVerseForNextEmail = 1;
         }
 
         const end_verse =
@@ -535,12 +622,12 @@ const processEmail = async () => {
 
         const getVerses = is_language
           ? await getMultipleVersesWithEnglishAndArabic(
-              start_surah,
+              next_surah,
               startVerseForNextEmail,
               daily_verse_count
             )
           : await getMultipleVersesWithArabic(
-              start_surah,
+              next_surah,
               startVerseForNextEmail,
               daily_verse_count
             );
@@ -554,7 +641,7 @@ const processEmail = async () => {
         if (lastEmail) {
           await Email_logs.update(
             {
-              last_sent_surah: start_surah,
+              last_sent_surah: next_surah,
               last_sent_verse: end_verse,
               updated_at: new Date(),
             },
@@ -579,7 +666,7 @@ const processEmail = async () => {
   }
 };
 
-cron.schedule("*/30 * * * *", async () => {
+cron.schedule("*/2 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");
@@ -599,4 +686,7 @@ module.exports = {
   randomVerse,
   initiateDonation,
   verifyDonation,
+  createBookmark,
+  getUserBookmarks,
+  deleteBookmark,
 };

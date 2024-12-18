@@ -1,5 +1,4 @@
 const axios = require("axios");
-const TO_KOBO = 100;
 
 const initializePayment = async (email, amount) => {
   return axios({
