@@ -16,6 +16,7 @@ const { Otp } = require("../models/otp_model");
 const { Customers } = require("../models/customer_model");
 const { Preferences } = require("../models/preference_model");
 const { Email_logs } = require("../models/emailLogs_model");
+const { Bookmark } = require("../models/bookmark_model");
 const sequelize = require("../config/db");
 const messages = require("../constants/messages");
 const statusCode = require("../constants/statusCode");
@@ -344,7 +345,7 @@ const completeForgetPassword = async (request, response, next) => {
 
 const customerPreference = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id, email } = request.params;
     const {
       daily_verse_count,
       start_surah,
@@ -359,14 +360,14 @@ const customerPreference = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    const customer = await Customers.findOne({
-      where: { customer_id: customer_id },
-    });
+    // const customer = await Customers.findOne({
+    //   where: { customer_id: customer_id },
+    // });
 
     await Preferences.create({
       customer_id: customer_id,
       preference_id: uuidv4(),
-      email: customer.dataValues.email,
+      email: email,
       daily_verse_count: daily_verse_count,
       start_surah: start_surah,
       start_verse: start_verse,
@@ -387,7 +388,7 @@ const customerPreference = async (request, response, next) => {
 
 const updatePreference = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
     const data = request.body;
     const { error } = preferenceValidation(data);
     if (error !== undefined)
@@ -467,7 +468,7 @@ const verifyDonation = async (request, response, next) => {
 
 const createBookmark = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
     const { surah, verse } = request.body;
 
     const existingBookmark = await Bookmark.findOne({
@@ -478,6 +479,7 @@ const createBookmark = async (request, response, next) => {
     }
 
     const bookmark = await Bookmark.create({
+      bookmark_id: uuidv4(),
       customer_id,
       surah,
       verse,
@@ -497,12 +499,12 @@ const createBookmark = async (request, response, next) => {
 
 const getUserBookmarks = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
 
     const bookmarks = await Bookmark.findAll({
       where: {
         customer_id,
-        is_deleted: false,
+        
       },
     });
     response.status(statusCode.OK).json({
@@ -519,20 +521,19 @@ const deleteBookmark = async (request, response, next) => {
   try {
     const { bookmark_id, customer_id } = request.params;
 
-    const bookmark = await Bookmark.findOne({
-      where: {
-        customer_id,
-        id: bookmark_id,
-        is_deleted: false,
-      },
-    });
+    // const bookmark = await Bookmark.findOne({
+    //   where: {
+    //     customer_id,
+    //     id: bookmark_id,
+    //   },
+    // });
 
-    if (bookmark !== null) {
-      throw new Error("Bookmark not found");
-    }
+    // if (bookmark !== null) {
+    //   throw new Error("Bookmark not found");
+    // }
 
-    await Bookmark.update(
-      { is_deleted: true },
+    await Bookmark.destroy(
+     
       {
         where: {
           customer_id,
@@ -584,7 +585,7 @@ const processEmail = async () => {
       });
       let shouldSendEmail = false;
 
-      if (lastEmail === null) shouldSendEmail = true;
+      if (lastEmail === null) shouldSendEmail = true; //i.e means this is the first email to be sent
       else {
         const now = moment();
         const lastSentDate = moment(lastEmail.dataValues.updated_at);
