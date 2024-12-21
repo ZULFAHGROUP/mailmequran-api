@@ -359,13 +359,6 @@ const customerPreference = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-<<<<<<< HEAD
-=======
-    // const customer = await Customers.findOne({
-    //   where: { customer_id: customer_id },
-    // });
->>>>>>> 1790cfd3ffdf97abdd27c9af86153d818a771d38
-
     await Preferences.create({
       customer_id: customer_id,
       preference_id: uuidv4(),
@@ -506,7 +499,6 @@ const getUserBookmarks = async (request, response, next) => {
     const bookmarks = await Bookmark.findAll({
       where: {
         customer_id,
-        
       },
     });
     response.status(statusCode.OK).json({
@@ -534,15 +526,12 @@ const deleteBookmark = async (request, response, next) => {
     //   throw new Error("Bookmark not found");
     // }
 
-    await Bookmark.destroy(
-     
-      {
-        where: {
-          customer_id,
-          id: bookmark_id,
-        },
-      }
-    );
+    await Bookmark.destroy({
+      where: {
+        customer_id,
+        id: bookmark_id,
+      },
+    });
 
     response.status(statusCode).json({
       status: true,
@@ -552,6 +541,7 @@ const deleteBookmark = async (request, response, next) => {
     next(error);
   }
 };
+
 const processEmail = async () => {
   try {
     const customerEmailLogs = await Email_logs.findAll({
@@ -560,19 +550,23 @@ const processEmail = async () => {
       },
     });
 
-    for (const log of customerEmailLogs) {
-      const { customer_id, next_sending_date } = log.dataValues;
+    if (customerEmailLogs.length === 0) return;
 
-      const preference = await Preferences.findOne({
-        where: {
-          customer_id,
-          schedule_time: currentTime,
-        },
-      });
+    const allPreferences = await Preferences.findAll({
+      where: {
+        schedule_time: currentTime,
+      },
+    });
 
-      if (!preference) break;
+    if (allPreferences.length === 0) return;
+
+    for (const preference of allPreferences) {
+      let log = customerEmailLogs.find(
+        (log) => log.customer_id === customer_id
+      );
 
       const {
+        customer_id,
         email,
         daily_verse_count,
         start_surah,
@@ -581,21 +575,10 @@ const processEmail = async () => {
         frequency,
       } = preference.dataValues;
 
-      let shouldSendEmail = false;
+      let currentSurah = log ? log.dataValues.last_sent_surah : start_surah;
+      let currentVerse = log ? log.dataValues.last_sent_verse + 1 : start_verse;
 
-<<<<<<< HEAD
-      if (!log === null) shouldSendEmail = true;
-=======
-      if (lastEmail === null) shouldSendEmail = true; //i.e means this is the first email to be sent
->>>>>>> 1790cfd3ffdf97abdd27c9af86153d818a771d38
-      else {
-        let currentSurah = log ? log.dataValues.last_sent_surah : start_surah;
-        let currentVerse = log
-          ? log.dataValues.last_sent_verse + 1
-          : start_verse;
-      }
-
-      // Fetch verses using `getVerses`
+      // Fetch verses using
       const verses = await getVerses(
         currentSurah,
         currentVerse,
@@ -616,21 +599,23 @@ const processEmail = async () => {
       const nextVerse = lastFetchedVerse.verse;
 
       // Update or create email logs
-      if (!log)
+      if (!log) {
         await Email_logs.create({
           customer_id,
-          last_sent_surah: currentSurah,
-          last_sent_verse: currentVerse,
-          next_sending_date: calculateNextSendingDate(frequency),
-        });
-      await Email_logs.update(
-        {
           last_sent_surah: nextSurah,
           last_sent_verse: nextVerse,
           next_sending_date: calculateNextSendingDate(frequency),
-        },
-        { where: { customer_id } }
-      );
+        });
+      } else {
+        await Email_logs.update(
+          {
+            last_sent_surah: nextSurah,
+            last_sent_verse: nextVerse,
+            next_sending_date: calculateNextSendingDate(frequency),
+          },
+          { where: { customer_id } }
+        );
+      }
     }
   } catch (error) {
     console.error("Error processing email:", error);
