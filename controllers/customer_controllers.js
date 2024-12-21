@@ -16,6 +16,7 @@ const { Otp } = require("../models/otp_model");
 const { Customers } = require("../models/customer_model");
 const { Preferences } = require("../models/preference_model");
 const { Email_logs } = require("../models/emailLogs_model");
+const { Bookmark } = require("../models/bookmark_model");
 const sequelize = require("../config/db");
 const messages = require("../constants/messages");
 const statusCode = require("../constants/statusCode");
@@ -30,12 +31,11 @@ const {
   formatVersesWithArabic,
 } = require("../utils");
 const { getTotalVersesInSurah } = require("../utils");
-const {
-  getMultipleVersesWithArabic,
-  getMultipleVersesWithEnglishAndArabic,
-  generateRandomVerse,
-} = require("../api/quran");
+const { getVerses, generateRandomVerse } = require("../api/quran");
 const { initializePayment, verifyPayment } = require("../services/donate");
+const today = moment().format("YYYY-MM-DD");
+const currentTime = moment().format("HH:mm");
+const now = moment().format("YYYY-MM-DD");
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -344,7 +344,7 @@ const completeForgetPassword = async (request, response, next) => {
 
 const customerPreference = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id, email } = request.params;
     const {
       daily_verse_count,
       start_surah,
@@ -359,21 +359,18 @@ const customerPreference = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    const customer = await Customers.findOne({
-      where: { customer_id: customer_id },
-    });
 
     await Preferences.create({
       customer_id: customer_id,
       preference_id: uuidv4(),
-      email: customer.dataValues.email,
+      email: email,
       daily_verse_count: daily_verse_count,
       start_surah: start_surah,
       start_verse: start_verse,
       is_language: is_language,
       frequency: frequency,
       schedule_time: schedule_time,
-      created_at: Date.now(),
+      timezone: timezone,
     });
 
     response.status(statusCode.OK).json({
@@ -549,117 +546,81 @@ const deleteBookmark = async (request, response, next) => {
     next(error);
   }
 };
-
 const processEmail = async () => {
   try {
-    const preferences = await Preferences.findAll({
+    const customerEmailLogs = await Email_logs.findAll({
       where: {
-        schedule_time: "07:30:00",
-        // schedule_time: {
-        //   // [Op.lte]: moment().format("HH:mm:ss"),
-        // },
+        next_sending_date: today,
       },
     });
 
-    const preferencesData = preferences.map(
-      (preference) => preference.dataValues
-    );
+    for (const log of customerEmailLogs) {
+      const { customer_id, next_sending_date } = log.dataValues;
 
-    for (let i = 0; i < preferencesData.length; i++) {
-      const preference = preferencesData[i];
+      const preference = await Preferences.findOne({
+        where: {
+          customer_id,
+          schedule_time: currentTime,
+        },
+      });
+
+      if (!preference) break;
+
       const {
-        customer_id,
         email,
         daily_verse_count,
         start_surah,
         start_verse,
         is_language,
-        timezone,
         frequency,
-        schedule_time,
-      } = preference;
+      } = preference.dataValues;
 
-      const lastEmail = await Email_logs.findOne({
-        where: { customer_id },
-      });
       let shouldSendEmail = false;
 
-      if (lastEmail === null) shouldSendEmail = true;
+      if (!log === null) shouldSendEmail = true;
       else {
-        const now = moment();
-        const lastSentDate = moment(lastEmail.dataValues.updated_at);
-        const diffInDays = now.diff(lastSentDate, "days");
-        if (frequency === Frequency.DAILY && diffInDays >= 1)
-          shouldSendEmail = true;
-        else if (frequency === Frequency.WEEKLY && diffInDays >= 7)
-          shouldSendEmail = true;
-        else if (
-          frequency === Frequency.MONTHLY &&
-          now.month() !== lastSentDate.month()
-        )
-          shouldSendEmail = true;
+        let currentSurah = log ? log.dataValues.last_sent_surah : start_surah;
+        let currentVerse = log
+          ? log.dataValues.last_sent_verse + 1
+          : start_verse;
       }
-      console.log("shouldSendEmail", shouldSendEmail);
 
-      if (shouldSendEmail) {
-        const totalVersesInSurah = getTotalVersesInSurah(start_surah);
+      // Fetch verses using `getVerses`
+      const verses = await getVerses(
+        currentSurah,
+        currentVerse,
+        daily_verse_count,
+        is_language ? [is_language, "ar"] : ["ar"]
+      );
 
-        let startVerseForNextEmail = 1;
-        let next_surah = 1;
-        if (lastEmail) {
-          startVerseForNextEmail = lastEmail.dataValues.last_sent_verse + 1;
-        }
+      // Format the fetched verses
+      const formattedMessage = is_language
+        ? formatVersesWithEnglishAndArabic(verses)
+        : formatVersesWithArabic(verses);
 
-        if (startVerseForNextEmail >= totalVersesInSurah) {
-          next_surah = start_surah + 1;
-          startVerseForNextEmail = 1;
-        }
+      sendEmail(email, formattedMessage, "Your Verse for Today");
 
-        const end_verse =
-          startVerseForNextEmail + daily_verse_count - 1 > totalVersesInSurah
-            ? totalVersesInSurah
-            : startVerseForNextEmail + daily_verse_count - 1;
+      // Determine the new surah and verse for the next email
+      const lastFetchedVerse = verses[verses.length - 1];
+      const nextSurah = lastFetchedVerse.chapter;
+      const nextVerse = lastFetchedVerse.verse;
 
-        const getVerses = is_language
-          ? await getMultipleVersesWithEnglishAndArabic(
-              next_surah,
-              startVerseForNextEmail,
-              daily_verse_count
-            )
-          : await getMultipleVersesWithArabic(
-              next_surah,
-              startVerseForNextEmail,
-              daily_verse_count
-            );
-
-        const formattedMessage = is_language
-          ? formatVersesWithEnglishAndArabic(getVerses)
-          : formatVersesWithArabic(getVerses);
-
-        sendEmail(email, formattedMessage, "your verse for today");
-
-        if (lastEmail) {
-          await Email_logs.update(
-            {
-              last_sent_surah: next_surah,
-              last_sent_verse: end_verse,
-              updated_at: new Date(),
-            },
-            {
-              where: {
-                customer_id,
-              },
-            }
-          );
-        } else {
-          await Email_logs.create({
-            customer_id,
-            last_sent_surah: start_surah,
-            last_sent_verse: end_verse,
-            updated_at: new Date(),
-          });
-        }
-      }
+      // Update or create email logs
+      if (!log)
+        await Email_logs.create({
+          customer_id,
+          last_sent_surah: currentSurah,
+          last_sent_verse: currentVerse,
+          next_sending_date: calculateNextSendingDate(frequency),
+        });
+      await Email_logs.update(
+        {
+          last_sent_surah: nextSurah,
+          last_sent_verse: nextVerse,
+          next_sending_date: calculateNextSendingDate(frequency),
+        },
+        { where: { customer_id } }
+      );
     }
   } catch (error) {
     console.error("Error processing email:", error);

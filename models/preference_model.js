@@ -46,8 +46,8 @@ const Preferences = sequelize.define(
       defaultValue: 1,
     },
     is_language: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     timezone: {
       type: DataTypes.STRING,
@@ -65,11 +65,12 @@ const Preferences = sequelize.define(
 
     created_at: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
       allowNull: false,
     },
     updated_at: {
       type: DataTypes.DATE,
-      defaultValue: new Date(),
+      defaultValue: DataTypes.NOW,
       allowNull: false,
     },
   },

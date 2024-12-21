@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const saltRound = 10;
 const { v4: uuidv4 } = require("uuid");
+const { Frequency } = require("../enum");
 const generateOtp = (expiresInMinutes = 10) => {
   const otp = Math.floor(100000 + Math.random() * 900000);
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
@@ -94,7 +95,7 @@ const formatVersesWithArabic = (verses) => {
 //           <em>"${verse.en}"</em>
 //         </p>
 //       </div>
-     
+
 //       <div style="margin-bottom: 20px; text-align: left;">
 //         <h4 style="color: #2c3e50;">Reflective Question:</h4>
 //         <p style="font-size: 14px; color: #7f8c8d;">
@@ -115,7 +116,6 @@ const formatVersesWithArabic = (verses) => {
 //     </div>
 //   `;
 // };
-
 
 function getTotalVersesInSurah(surah) {
   const surahTotalVerses = {
@@ -238,6 +238,21 @@ function getTotalVersesInSurah(surah) {
   return surahTotalVerses[surah];
 }
 
+const calculateNextSendingDate = (frequency) => {
+  const now = moment(); // Current date without timezone
+  let nextSendingDate = now;
+
+  if (frequency === Frequency.DAILY) {
+    nextSendingDate = now.add(1, "day");
+  } else if (frequency === Frequency.WEEKLY) {
+    nextSendingDate = now.add(1, "week");
+  } else if (frequency === Frequency.MONTHLY) {
+    nextSendingDate = now.add(1, "month");
+  }
+
+  return nextSendingDate.format("YYYY-MM-DD");
+};
+
 module.exports = {
   generateOtp,
   hashPassword,
@@ -246,4 +261,5 @@ module.exports = {
   formatVersesWithEnglishAndArabic,
   formatVersesWithArabic,
   getTotalVersesInSurah,
+  calculateNextSendingDate,
 };

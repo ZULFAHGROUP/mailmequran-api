@@ -19,7 +19,7 @@ const Bookmark = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       references: {
-        model: Customer,
+        model: "Customers",
         key: "customer_id",
       },
     },

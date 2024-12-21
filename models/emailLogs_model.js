@@ -25,6 +25,10 @@ const Email_logs = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    next_sending_date: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -33,6 +37,7 @@ const Email_logs = sequelize.define(
     updated_at: {
       type: DataTypes.DATE,
       allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
