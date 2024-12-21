@@ -359,6 +359,12 @@ const customerPreference = async (request, response, next) => {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+<<<<<<< HEAD
+=======
+    // const customer = await Customers.findOne({
+    //   where: { customer_id: customer_id },
+    // });
+>>>>>>> 1790cfd3ffdf97abdd27c9af86153d818a771d38
 
     await Preferences.create({
       customer_id: customer_id,
@@ -384,7 +390,7 @@ const customerPreference = async (request, response, next) => {
 
 const updatePreference = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
     const data = request.body;
     const { error } = preferenceValidation(data);
     if (error !== undefined)
@@ -464,7 +470,7 @@ const verifyDonation = async (request, response, next) => {
 
 const createBookmark = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
     const { surah, verse } = request.body;
 
     const existingBookmark = await Bookmark.findOne({
@@ -475,6 +481,7 @@ const createBookmark = async (request, response, next) => {
     }
 
     const bookmark = await Bookmark.create({
+      bookmark_id: uuidv4(),
       customer_id,
       surah,
       verse,
@@ -494,12 +501,12 @@ const createBookmark = async (request, response, next) => {
 
 const getUserBookmarks = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
 
     const bookmarks = await Bookmark.findAll({
       where: {
         customer_id,
-        is_deleted: false,
+        
       },
     });
     response.status(statusCode.OK).json({
@@ -516,20 +523,19 @@ const deleteBookmark = async (request, response, next) => {
   try {
     const { bookmark_id, customer_id } = request.params;
 
-    const bookmark = await Bookmark.findOne({
-      where: {
-        customer_id,
-        id: bookmark_id,
-        is_deleted: false,
-      },
-    });
+    // const bookmark = await Bookmark.findOne({
+    //   where: {
+    //     customer_id,
+    //     id: bookmark_id,
+    //   },
+    // });
 
-    if (bookmark !== null) {
-      throw new Error("Bookmark not found");
-    }
+    // if (bookmark !== null) {
+    //   throw new Error("Bookmark not found");
+    // }
 
-    await Bookmark.update(
-      { is_deleted: true },
+    await Bookmark.destroy(
+     
       {
         where: {
           customer_id,
@@ -577,7 +583,11 @@ const processEmail = async () => {
 
       let shouldSendEmail = false;
 
+<<<<<<< HEAD
       if (!log === null) shouldSendEmail = true;
+=======
+      if (lastEmail === null) shouldSendEmail = true; //i.e means this is the first email to be sent
+>>>>>>> 1790cfd3ffdf97abdd27c9af86153d818a771d38
       else {
         let currentSurah = log ? log.dataValues.last_sent_surah : start_surah;
         let currentVerse = log
