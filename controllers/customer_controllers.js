@@ -8,6 +8,7 @@ const {
   forgotPasswordValidation,
   resetPasswordValidation,
   preferenceValidation,
+  updatePreferenceValidation,
 } = require("../validations");
 const { v4: uuidv4 } = require("uuid");
 const { hashPassword } = require("../utils");
@@ -29,6 +30,8 @@ const { Frequency } = require("../enum");
 const {
   formatVersesWithEnglishAndArabic,
   formatVersesWithArabic,
+  fetchLogsAndPreferences,
+  calculateNextSendingDate,
 } = require("../utils");
 const { getTotalVersesInSurah } = require("../utils");
 const { getVerses, generateRandomVerse } = require("../api/quran");
@@ -36,6 +39,7 @@ const { initializePayment, verifyPayment } = require("../services/donate");
 const today = moment().format("YYYY-MM-DD");
 const currentTime = moment().format("HH:mm");
 const now = moment().format("YYYY-MM-DD");
+const currentHour = moment().hour();
 
 const createCustomer = async (request, response, next) => {
   try {
@@ -226,6 +230,9 @@ const updateCustomer = async (request, response, next) => {
   try {
     const { customer_id } = request.params;
     const data = request.body;
+    if (!data || Object.keys(data).length === 0) {
+      throw new Error("invalid data");
+    }
     const { error } = updateCustomerValidation(data);
     if (error !== undefined)
       throw new Error(
@@ -342,9 +349,10 @@ const completeForgetPassword = async (request, response, next) => {
   }
 };
 
-const customerPreference = async (request, response, next) => {
+const createCustomerPreference = async (request, response, next) => {
+  const transaction = await sequelize.transaction();
   try {
-    const { customer_id, email } = request.params;
+    const { customer_id, email } = request.params; // retrieve customer_id from the middleware
     const {
       daily_verse_count,
       start_surah,
@@ -353,25 +361,42 @@ const customerPreference = async (request, response, next) => {
       timezone,
       frequency,
       schedule_time,
+      start_date,
     } = request.body;
     const { error } = preferenceValidation(request.body);
     if (error !== undefined)
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
-    await Preferences.create({
-      customer_id: customer_id,
-      preference_id: uuidv4(),
-      email: email,
-      daily_verse_count: daily_verse_count,
-      start_surah: start_surah,
-      start_verse: start_verse,
-      is_language: is_language,
-      frequency: frequency,
-      schedule_time: schedule_time,
-      timezone: timezone,
-    });
 
+    const preference_id = uuidv4();
+    await Preferences.create(
+      {
+        customer_id: customer_id,
+        preference_id: preference_id,
+        email: email,
+        daily_verse_count: daily_verse_count,
+        start_surah: start_surah,
+        start_verse: start_verse,
+        is_language: is_language,
+        timezone: timezone,
+        frequency: frequency,
+        schedule_time: schedule_time,
+        start_date: start_date,
+      },
+      { transaction }
+    );
+
+    await Email_logs.create(
+      {
+        preference_id: preference_id,
+        last_sent_surah: start_surah,
+        last_sent_verse: start_verse,
+        next_sending_date: start_date,
+      },
+      { transaction }
+    );
+    await transaction.commit();
     response.status(statusCode.OK).json({
       status: true,
       message: messages.CUSTOMER_PREFERENCE_CREATED,
@@ -382,20 +407,41 @@ const customerPreference = async (request, response, next) => {
 };
 
 const updatePreference = async (request, response, next) => {
+  const transaction = await sequelize.transaction();
   try {
     const { customer_id } = request.params; // retrieve customer_id from the middleware
     const data = request.body;
-    const { error } = preferenceValidation(data);
-    if (error !== undefined)
+    if (!data || Object.keys(data).length === 0) {
+      throw new Error("invalid data");
+    }
+    const { error } = updatePreferenceValidation(data);
+    if (error)
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
 
+    // Update Preferences
     await Preferences.update(data, {
-      where: {
-        customer_id: customer_id,
-      },
+      where: { customer_id },
+      transaction,
     });
+
+    // Update Email Logs (if needed, based on request body content)
+    if (data.start_surah || data.start_verse || data.start_date) {
+      await Email_logs.update(
+        {
+          ...(data.start_surah && { last_sent_surah: data.start_surah }),
+          ...(data.start_verse && { last_sent_verse: data.start_verse }),
+          ...(data.start_date && { next_sending_date: data.start_date }),
+        },
+        {
+          where: { customer_id },
+          transaction,
+        }
+      );
+    }
+
+    await transaction.commit();
 
     response.status(statusCode.OK).json({
       status: true,
@@ -544,41 +590,43 @@ const deleteBookmark = async (request, response, next) => {
 
 const processEmail = async () => {
   try {
-    const customerEmailLogs = await Email_logs.findAll({
-      where: {
-        next_sending_date: today,
-      },
+    // Fetch customer logs and preferences
+    const customerLogsAndPreferences = await fetchLogsAndPreferences();
+    console.log(customerLogsAndPreferences);
+    if (customerLogsAndPreferences === undefined) return;
+    // console.log(typeof customerLogsAndPreferences);
+
+    //converting a single result to an array if it return a single result if it return multiple then it will be an array
+    const normalizedResults = Array.isArray(customerLogsAndPreferences)
+      ? customerLogsAndPreferences
+      : [customerLogsAndPreferences];
+
+    const filteredResult = normalizedResults.filter((log) => {
+      const scheduleTime = log.schedule_time;
+      const scheduleMinute = moment(scheduleTime).minute();
+      const currentMinute = moment().minute();
+      return currentMinute === scheduleMinute;
     });
 
-    if (customerEmailLogs.length === 0) return;
+    if (filteredResult.length === 0) return;
 
-    const allPreferences = await Preferences.findAll({
-      where: {
-        schedule_time: currentTime,
-      },
-    });
-
-    if (allPreferences.length === 0) return;
-
-    for (const preference of allPreferences) {
-      let log = customerEmailLogs.find(
-        (log) => log.customer_id === customer_id
-      );
-
+    for (const log of filteredResult) {
       const {
-        customer_id,
+        preference_id,
         email,
         daily_verse_count,
         start_surah,
         start_verse,
         is_language,
         frequency,
-      } = preference.dataValues;
+        last_sent_surah,
+        last_sent_verse,
+      } = log;
 
-      let currentSurah = log ? log.dataValues.last_sent_surah : start_surah;
-      let currentVerse = log ? log.dataValues.last_sent_verse + 1 : start_verse;
+      let currentSurah = last_sent_surah;
+      let currentVerse = last_sent_verse;
 
-      // Fetch verses using
+      // Fetch verses using `getVerses`
       const verses = await getVerses(
         currentSurah,
         currentVerse,
@@ -591,31 +639,23 @@ const processEmail = async () => {
         ? formatVersesWithEnglishAndArabic(verses)
         : formatVersesWithArabic(verses);
 
+      // Send email
       sendEmail(email, formattedMessage, "Your Verse for Today");
 
       // Determine the new surah and verse for the next email
       const lastFetchedVerse = verses[verses.length - 1];
       const nextSurah = lastFetchedVerse.chapter;
-      const nextVerse = lastFetchedVerse.verse;
+      const nextVerse = lastFetchedVerse.verse + 1;
 
-      // Update or create email logs
-      if (!log) {
-        await Email_logs.create({
-          customer_id,
+      // Update email log
+      Email_logs.update(
+        {
           last_sent_surah: nextSurah,
           last_sent_verse: nextVerse,
           next_sending_date: calculateNextSendingDate(frequency),
-        });
-      } else {
-        await Email_logs.update(
-          {
-            last_sent_surah: nextSurah,
-            last_sent_verse: nextVerse,
-            next_sending_date: calculateNextSendingDate(frequency),
-          },
-          { where: { customer_id } }
-        );
-      }
+        },
+        { where: { preference_id } }
+      );
     }
   } catch (error) {
     console.error("Error processing email:", error);
@@ -637,7 +677,7 @@ module.exports = {
   getCustomer,
   startForgetPassword,
   completeForgetPassword,
-  customerPreference,
+  createCustomerPreference,
   updatePreference,
   randomVerse,
   initiateDonation,

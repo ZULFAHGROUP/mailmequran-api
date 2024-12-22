@@ -29,18 +29,19 @@ const getVerses = async (surah, verse, verseCount, languages) => {
     while (verseCount > 0) {
       // get the total number of verse in the surah
       const totalVersesInSurah = getTotalVersesInSurah(surah);
+      if (verse > totalVersesInSurah) {
+        // Go to the next chapter.
+        surah++;
+        // Start from the first verse of the new chapter.
+        verse = 1;
+      }
 
       // Fetch one verse at a time
-      const fetchedVerse = await new Promise((resolve, reject) => {
-        quran.select(
-          { chapter: surah, verse: [verse] },
-          { language: languages },
-          (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-          }
-        );
-      });
+      const fetchedVerse = await quran.select(
+        { chapter: surah, verse: [verse] },
+        { language: languages }
+      );
+
       // Add the fetched verse to the list.
       result.push(...fetchedVerse);
 
@@ -51,12 +52,6 @@ const getVerses = async (surah, verse, verseCount, languages) => {
       verse++;
 
       // If we reach the end of the chapter, move to the next chapter
-      if (verse > totalVersesInSurah) {
-        // Go to the next chapter.
-        surah++;
-        // Start from the first verse of the new chapter.
-        verse = 1;
-      }
     }
 
     return result;

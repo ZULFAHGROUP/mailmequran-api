@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
 const Preferences = sequelize.define(
-  "Preference",
+  "Preferences",
   {
     sn: {
       type: DataTypes.INTEGER,
@@ -26,10 +26,7 @@ const Preferences = sequelize.define(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      references: {
-        model: "Customers",
-        key: "email",
-      },
+      unique: true,
     },
     daily_verse_count: {
       type: DataTypes.INTEGER,
@@ -60,6 +57,10 @@ const Preferences = sequelize.define(
     },
     schedule_time: {
       type: DataTypes.TIME,
+      allowNull: true,
+    },
+    start_date: {
+      type: DataTypes.DATE,
       allowNull: true,
     },
 

@@ -9,12 +9,12 @@ const Email_logs = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    customer_id: {
+    preference_id: {
       type: DataTypes.STRING,
       allowNull: false,
       references: {
-        model: "Customers",
-        key: "customer_id",
+        model: "Preferences",
+        key: "preference_id",
       },
     },
     last_sent_surah: {
@@ -26,7 +26,7 @@ const Email_logs = sequelize.define(
       allowNull: false,
     },
     next_sending_date: {
-      type: DataTypes.STRING,
+      type: DataTypes.DATE,
       allowNull: false,
     },
     created_at: {

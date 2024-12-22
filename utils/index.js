@@ -3,6 +3,11 @@ const jwt = require("jsonwebtoken");
 const saltRound = 10;
 const { v4: uuidv4 } = require("uuid");
 const { Frequency } = require("../enum");
+const sequelize = require("../config/db");
+const moment = require("moment");
+const { Email_logs } = require("../models/emailLogs_model");
+const { Preferences } = require("../models/preference_model");
+
 const generateOtp = (expiresInMinutes = 10) => {
   const otp = Math.floor(100000 + Math.random() * 900000);
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
@@ -239,7 +244,7 @@ function getTotalVersesInSurah(surah) {
 }
 
 const calculateNextSendingDate = (frequency) => {
-  const now = moment(); // Current date without timezone
+  const now = moment();
   let nextSendingDate = now;
 
   if (frequency === Frequency.DAILY) {
@@ -253,6 +258,33 @@ const calculateNextSendingDate = (frequency) => {
   return nextSendingDate.format("YYYY-MM-DD");
 };
 
+const fetchLogsAndPreferences = async () => {
+  try {
+    // Get today's date and current hour using Moment.js
+    const today = moment().format("YYYY-MM-DD");
+    const currentHour = moment().hour();
+
+    // Query to fetch logs and preferences in one call
+    const query = `
+      SELECT e.*, p.*
+      FROM "Email_logs" e
+      INNER JOIN "Preferences" p ON e.preference_id = p.preference_id
+      WHERE e.next_sending_date = :today
+      AND EXTRACT(HOUR FROM p.schedule_time) = :currentHour
+    `;
+
+    const [results] = await sequelize.query(query, {
+      replacements: { today, currentHour },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    console.log("Logs and Preferences:", results);
+    return results;
+  } catch (error) {
+    console.error("Error fetching logs and preferences:", error);
+    throw error;
+  }
+};
 module.exports = {
   generateOtp,
   hashPassword,
@@ -262,4 +294,5 @@ module.exports = {
   formatVersesWithArabic,
   getTotalVersesInSurah,
   calculateNextSendingDate,
+  fetchLogsAndPreferences,
 };

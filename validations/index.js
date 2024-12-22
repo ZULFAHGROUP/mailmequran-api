@@ -56,7 +56,9 @@ const updateCustomerValidation = (data) => {
     surname: Joi.string().min(3).optional(),
     othernames: Joi.string().min(3).optional(),
     phone: Joi.string().optional(),
-  });
+  })
+    .min(1)
+    .max(3);
 
   return updateCustomerSchema.validate(data);
 };
@@ -102,13 +104,24 @@ const preferenceValidation = (data) => {
     schedule_time: Joi.string()
       .pattern(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, "HH:mm:ss")
       .required(),
+    start_date: Joi.date().required(),
   });
   return preferenceSchema.validate(data);
 };
 
 const updatePreferenceValidation = (data) => {
-  const updatePreferenceSchema = Joi.object({});
-
+  const updatePreferenceSchema = Joi.object({
+    daily_verse_count: Joi.number().integer().positive().optional(),
+    start_surah: Joi.number().integer().positive().optional(),
+    start_verse: Joi.number().integer().positive().optional(),
+    is_language: Joi.string().optional(),
+    timezone: Joi.string().max(100).optional(),
+    frequency: Joi.string().valid("daily", "weekly", "monthly").optional(),
+    schedule_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, "HH:mm:ss")
+      .optional(),
+    start_date: Joi.date().optional(),
+  }).min(1);
   return updatePreferenceSchema.validate(data);
 };
 
