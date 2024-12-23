@@ -9,13 +9,13 @@ const {
   getCustomer,
   startForgetPassword,
   completeForgetPassword,
-  customerPreference,
+  createCustomerPreference,
   updatePreference,
   randomVerse,
   initiateDonation,
   verifyDonation,
   createBookmark,
-  getUserBookmarks,
+  getBookmarks,
   deleteBookmark,
 } = require("../controllers/customer_controllers");
 const { authorization } = require("../middlewares/authorization");
@@ -28,13 +28,13 @@ router.patch("/customer", authorization, updateCustomer);
 router.get("/customer", authorization, getCustomer);
 router.patch("/customer/forget-password/:email", startForgetPassword);
 router.post("/customer/forget-password/complete", completeForgetPassword);
-router.post("/customer/preference", authorization, customerPreference);
+router.post("/customer/preference", authorization, createCustomerPreference);
 router.patch("/customer/preference", authorization, updatePreference);
 router.get("/customer/random-verse", randomVerse);
 router.post("/donation/initiate", initiateDonation);
 router.post("/donation/verify/:reference", verifyDonation);
 router.post("/customer/bookmark", authorization, createBookmark);
-router.get("/customer/bookmarks", authorization, getUserBookmarks);
+router.get("/customer/bookmarks", authorization, getBookmarks);
 router.delete("/customer/bookmark/:id", authorization, deleteBookmark);
 
 module.exports = router;

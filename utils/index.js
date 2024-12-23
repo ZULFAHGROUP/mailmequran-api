@@ -45,45 +45,127 @@ const generateJwtToken = (email, expiringTime) => {
   return token;
 };
 
-const formatVersesWithEnglishAndArabic = (verses) => {
-  return verses
-    .map(
-      (verse) => `
-        <div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
-          <h3 style="color: #2c3e50;">Chapter: ${verse.chapter}, Verse: ${verse.verse}</h3>
-          <p style="font-size: 54px; color: #8e44ad;">
-            <strong>Arabic:</strong> ${verse.ar}
-          </p>
-          <p style="font-size: 16px; color: #34495e;">
-            <strong>English:</strong> ${verse.en}
-          </p>
-          <p style="font-size: 14px; color: #7f8c8d;">
-            <strong>Translator:</strong> ${verse.translator}
-          </p>
-        </div>
-      `
-    )
-    .join("");
+const formatOtpMessage = (otp) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; max-width: 500px; margin: auto; text-align: center;">
+      <h2 style="color: #34495e;">Your Verification Code</h2>
+      <p style="font-size: 18px; color: #2c3e50; margin: 10px 0;">
+        Use the code below to complete your email verification:
+      </p>
+      <p style="font-size: 40px; font-weight: bold; color: #e74c3c; margin: 20px 0;">
+        ${otp}
+      </p>
+      <p style="font-size: 18px; color: #95a5a6; margin: 10px 0;">
+        This code is valid for the next 10 minutes. Please do not share it with anyone.
+      </p>
+    </div>
+  `;
 };
 
-const formatVersesWithArabic = (verses) => {
-  return verses
-    .map(
-      (verse) => `
-        <div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
-          <h3 style="color: #2c3e50;">Chapter: ${verse.chapter}, Verse: ${verse.verse}</h3>
-          <p style="font-size: 54px; color: #8e44ad;">
-            <strong>Arabic:</strong> ${verse.ar}
-          </p>
-        </div>
-      `
-    )
-    .join("");
+const formatVerificationMessage = () => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 600px; margin: auto; text-align: center;">
+      <h1 style="color: #4a90e2; font-size: 32px; margin-bottom: 10px;">Email Verified Successfully!</h1>
+      <p style="font-size: 16px; color: #333; line-height: 1.5; margin: 10px 0;">
+        Your email address has been successfully verified.
+      </p>
+      <p style="font-size: 18px; color: #2c3e50; font-weight: bold; margin: 20px 0;">
+        Welcome to <span style="color: #e74c5c;">MAIL ME QURAN APP</span>!
+      </p>
+      <p style="font-size: 14px; color: #7f8c8d; margin: 10px 0;">
+        We're delighted to have you join us. Explore the app and enhance your Quranic learning journey.
+      </p>
+    </div>
+  `;
 };
 
-// const formatDailyVerseEmail = (verse) => {
-//   return `
-//     <div style="font-family: Arial, sans-serif; margin: 0 auto; max-width: 600px; padding: 20px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
+const formatPasswordResetMessage = (otp) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 600px; margin: auto; text-align: center;">
+      <h2 style="color: #4a90e2; font-size: 24px; margin-bottom: 20px;">Password Reset Request</h2>
+      <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+        Hi, Your OTP is:
+      </p>
+      <p style="font-size: 36px; font-weight: bold; color: #e74c3c; margin: 20px 0;">
+        ${otp}
+      </p>
+      <p style="font-size: 14px; color: #7f8c8d; margin-top: 20px;">
+        Please use this OTP to reset your password. This code will expire in 10 minutes.
+      </p>
+      <p style="font-size: 12px; color: #bdc3c7; margin-top: 10px;">
+        If you did not request a password reset, you can safely ignore this message.
+      </p>
+    </div>
+  `;
+};
+
+const formatPasswordResetSuccessMessage = () => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 600px; margin: auto; text-align: center;">
+      <h2 style="color: #27ae60; font-size: 24px; margin-bottom: 20px;">Password Reset Successful</h2>
+      <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+        Hi, your password has been reset successfully.
+      </p>
+      <p style="font-size: 14px; color: #7f8c8d; margin-top: 20px;">
+        If you did not make this change, please contact our support team immediately to secure your account.
+      </p>
+      <p style="font-size: 12px; color: #bdc3c7; margin-top: 10px;">
+        Thank you for using our service.
+      </p>
+    </div>
+  `;
+};
+
+const formatQuranEmailTemplate = (verses, showEnglish) => {
+  return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color: #ffffff; padding: 2rem">
+      <div style="font-size: 1.5rem; background-color: skyblue; padding: 10px;">logo</div>
+      
+      <!-- Image Section -->
+      <div style="text-align: center; margin-top: 10px;">
+        <img src="" alt="Quranic Scene" style="max-width: 100%; height: auto; border-radius: 8px;">
+      </div>
+
+      <!-- Header Section -->
+      <div style="padding: 20px; text-align: center; background-color: #f9f9f9;">
+        <h1 style="color: #2c3e50; font-size: 24px; margin: 0;">Your Daily Dose of Quranic Reflections</h1>
+        <p style="color: #7f8c8d; font-size: 14px; margin: 5px 0;">Connecting you to the Quran, one verse at a time.</p>
+      </div>
+
+      <!-- Verses Section -->
+      ${verses
+        .map(
+          (verse) => `
+          <div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
+            <h3 style="color: #2c3e50;">Chapter: ${verse.chapter}, Verse: ${
+            verse.verse
+          }</h3>
+            
+            <p style="font-size: 54px; color: #8e44ad; text-align: right;">
+              <strong>Arabic:</strong> ${verse.ar}
+            </p>
+            
+            ${
+              showEnglish
+                ? `
+              <p style="font-size: 16px; color: #34495e; text-align: left;">
+                <strong>English:</strong> ${verse.en}
+              </p>
+            `
+                : ""
+            }
+          </div>
+        `
+        )
+        .join("")}
+      
+      <!-- Footer Section -->
+      <div style="padding: 20px; text-align: center; background-color: #f9f9f9; border-top: 1px solid #ddd;">
+        <p style="font-size: 12px; color: #7f8c8d;">May Allah (SWT) bless you for taking the time to connect with His words</p>
+        <button style="padding: 10px 15px; font-size: 12px; color: #fff; background-color: #e74c3c; border: none; border-radius: 4px; cursor: pointer;">Unsubscribe</button>
+      </div>
+    </div>`;
+};
+
 //       <div style="text-align: center; margin-bottom: 20px;">
 //         <h2 style="color: #2c3e50; margin-bottom: 10px;">Your Daily Dose of Quranic Verses</h2>
 //         <p style="color: #7f8c8d; font-size: 14px;">Connecting you to the Quran, one verse at a time.</p>
@@ -285,14 +367,18 @@ const fetchLogsAndPreferences = async () => {
     throw error;
   }
 };
+
 module.exports = {
   generateOtp,
   hashPassword,
   comparePassword,
   generateJwtToken,
-  formatVersesWithEnglishAndArabic,
-  formatVersesWithArabic,
+  formatOtpMessage,
+  formatVerificationMessage,
+  formatPasswordResetMessage,
+  formatPasswordResetSuccessMessage,
   getTotalVersesInSurah,
   calculateNextSendingDate,
   fetchLogsAndPreferences,
+  formatQuranEmailTemplate,
 };

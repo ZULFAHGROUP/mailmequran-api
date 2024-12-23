@@ -32,12 +32,6 @@ const Bookmark = sequelize.define(
       allowNull: false,
     },
 
-    is_deleted: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-    },
-
     created_at: {
       type: DataTypes.DATE,
       defaultValue: new Date(),

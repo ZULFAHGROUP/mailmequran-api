@@ -28,8 +28,11 @@ const moment = require("moment");
 const { Op } = require("sequelize");
 const { Frequency } = require("../enum");
 const {
-  formatVersesWithEnglishAndArabic,
-  formatVersesWithArabic,
+  formatOtpMessage,
+  formatVerificationMessage,
+  formatPasswordResetMessage,
+  formatPasswordResetSuccessMessage,
+  formatQuranEmailTemplate,
   fetchLogsAndPreferences,
   calculateNextSendingDate,
 } = require("../utils");
@@ -45,10 +48,11 @@ const createCustomer = async (request, response, next) => {
   try {
     const { surname, othernames, email, password, phone } = request.body;
     const { error } = createCustomerValidation(request.body);
-    if (error !== undefined)
+    if (error !== undefined) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
 
     const [customerExistence, tempCustomerExistence] = await Promise.all([
       Customers.findOne({ where: { email } }),
@@ -80,13 +84,9 @@ const createCustomer = async (request, response, next) => {
       otp_code: otp,
       expires_at: expiresAt,
     });
-    sendEmail(
-      email,
-      `<p><strong>Your verification code is:</strong> <strong>${otp}</strong></p>
-      <p>Please use this code to verify your email address.</p>
-    `,
-      "MAIL ME QURAN Email Verification"
-    );
+
+    const message = formatOtpMessage(otp);
+    sendEmail(email, message, "MAIL ME QURAN Email Verification");
 
     response.status(statusCode.CREATED).json({
       success: true,
@@ -111,19 +111,22 @@ const verifyEmail = async (request, response, next) => {
       where: { email: email, otp_code: otp },
     });
 
-    if (checkIfEmailAndOtpExist == null)
+    if (checkIfEmailAndOtpExist == null) {
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+    }
 
     const currentTime = new Date();
     const { expires_at } = checkIfEmailAndOtpExist.dataValues;
-    if (currentTime > new Date(expires_at))
+    if (currentTime > new Date(expires_at)) {
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+    }
 
     const tempCustomer = await TemporaryCustomers.findOne({
       where: { email: email },
     });
-    if (tempCustomer == null)
+    if (tempCustomer == null) {
       throw new Error("The verification process failed. Please try again");
+    }
 
     await Customers.create(
       {
@@ -146,12 +149,8 @@ const verifyEmail = async (request, response, next) => {
     await transaction.commit();
 
     //send email
-    sendEmail(
-      email,
-      `<p>Your email address has been successfully verified.</p>
-      <p>Welcome to MAIL ME QURAN APP</p> `,
-      "MAIL ME QURAN Email Verification Successful"
-    );
+    const message = formatVerificationMessage();
+    sendEmail(email, message, "MAIL ME QURAN Email Verification Successful");
 
     response.status(statusCode.OK).json({
       status: true,
@@ -169,24 +168,24 @@ const resendOtp = async (request, response, next) => {
     const { email } = request.params;
     const { error } = resendOtpValidation(request.params);
     const checkIfEmailAndOtpExist = await Otp.findOne({ where: { email } });
-    if (checkIfEmailAndOtpExist == null)
+    if (checkIfEmailAndOtpExist == null) {
       throw new Error("This process failed. Please try again");
+    }
 
     const currentTime = new Date();
     const { expires_at } = checkIfEmailAndOtpExist.dataValues;
-    if (currentTime < new Date(expires_at))
+    if (currentTime < new Date(expires_at)) {
       throw new Error("your OTP has not expired");
+    }
 
     const newOtp = checkIfEmailAndOtpExist.dataValues.otp_code;
     const { expiresAt } = generateOtp();
 
     await Otp.update({ expires_at: expiresAt }, { where: { email } });
 
-    sendEmail(
-      email,
-      `<p><strong>Your new verification code is:</strong> <strong>${newOtp}</strong></p>
-      <p>Please use this code to verify your email address.</p>`
-    );
+    //send email
+    const message = formatOtpMessage(newOtp);
+    sendEmail(email, message, "MAIL ME QURAN Email Verification");
 
     response
       .status(statusCode.OK)
@@ -200,10 +199,12 @@ const login = async (request, response, next) => {
   try {
     const { email, password } = request.body;
     const { error } = loginValidation(request.body);
-    if (error !== undefined)
+    if (error !== undefined) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
+
     const customer = await Customers.findOne({ where: { email } });
     if (customer == null) throw new Error(messages.INVALID_CREDENTIALS);
 
@@ -234,10 +235,11 @@ const updateCustomer = async (request, response, next) => {
       throw new Error("invalid data");
     }
     const { error } = updateCustomerValidation(data);
-    if (error !== undefined)
+    if (error !== undefined) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
 
     await Customers.update(data, {
       where: {
@@ -285,17 +287,18 @@ const startForgetPassword = async (request, response, next) => {
     const { email } = request.params;
 
     const { error } = forgotPasswordValidation(request.params);
-    if (error !== undefined)
+    if (error !== undefined) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
+
     const { otp, expiresAt } = generateOtp();
     await Otp.create({ email, otp_code: otp, expires_at: expiresAt });
-    sendEmail(
-      email,
-      `Hi , Your OTP is ${otp}. Please use this to reset your password`,
-      "Password Reset"
-    );
+
+    //send email
+    const message = formatPasswordResetMessage(otp);
+    sendEmail(email, message, "Password Reset");
 
     response.status(statusCode.OK).json({
       status: true,
@@ -310,35 +313,40 @@ const completeForgetPassword = async (request, response, next) => {
   try {
     const { email, otp, newPassword } = request.body;
     const { error } = resetPasswordValidation(request.body);
-    if (error !== undefined)
+    if (error !== undefined) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
+
+    // Check if email exists in customer table to abort early
+    const customer = await Customers.findOne({ where: { email } });
+    if (customer == null) throw new Error(messages.SOMETHING_WENT_WRONG);
+
     const checkIfEmailAndOtpExist = await Otp.findOne({
       where: { email: email, otp_code: otp },
     });
 
-    if (checkIfEmailAndOtpExist == null)
+    if (checkIfEmailAndOtpExist == null) {
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+    }
     const currentTime = new Date();
     const { expires_at } = checkIfEmailAndOtpExist.dataValues;
 
-    if (currentTime > new Date(expires_at))
+    if (currentTime > new Date(expires_at)) {
       throw new Error(messages.OTP_INVALID_OR_EXPIRED);
+    }
 
-    const customer = await Customers.findOne({ where: { email } });
-    if (customer == null) throw new Error(messages.SOMETHING_WENT_WRONG);
     const [hash, salt] = await hashPassword(newPassword);
     await Customers.update(
       { password_hash: hash, password_salt: salt },
       { where: { email } }
     );
     await Otp.destroy({ where: { email, otp_code: otp } });
-    sendEmail(
-      email,
-      "Hi , Your password has been reset successfully",
-      "Password Reset Successful"
-    );
+
+    //send email
+    const message = formatPasswordResetSuccessMessage();
+    sendEmail(email, message, "Password Reset Successful");
 
     response.status(statusCode.OK).json({
       status: true,
@@ -364,10 +372,11 @@ const createCustomerPreference = async (request, response, next) => {
       start_date,
     } = request.body;
     const { error } = preferenceValidation(request.body);
-    if (error !== undefined)
+    if (error !== undefined) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
 
     const preference_id = uuidv4();
     await Preferences.create(
@@ -415,10 +424,11 @@ const updatePreference = async (request, response, next) => {
       throw new Error("invalid data");
     }
     const { error } = updatePreferenceValidation(data);
-    if (error)
+    if (error) {
       throw new Error(
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
+    }
 
     // Update Preferences
     await Preferences.update(data, {
@@ -455,7 +465,6 @@ const updatePreference = async (request, response, next) => {
 const randomVerse = async (request, response, next) => {
   try {
     const data = await generateRandomVerse();
-    console.log(data);
     response.status(statusCode.OK).json({
       status: true,
       message: messages.RANDOM_VERSE_FOUND,
@@ -538,7 +547,7 @@ const createBookmark = async (request, response, next) => {
   }
 };
 
-const getUserBookmarks = async (request, response, next) => {
+const getBookmarks = async (request, response, next) => {
   try {
     const { customer_id } = request.params; // retrieve customer_id from the middleware
 
@@ -561,21 +570,10 @@ const deleteBookmark = async (request, response, next) => {
   try {
     const { bookmark_id, customer_id } = request.params;
 
-    // const bookmark = await Bookmark.findOne({
-    //   where: {
-    //     customer_id,
-    //     id: bookmark_id,
-    //   },
-    // });
-
-    // if (bookmark !== null) {
-    //   throw new Error("Bookmark not found");
-    // }
-
     await Bookmark.destroy({
       where: {
         customer_id,
-        id: bookmark_id,
+        bookmark_id: bookmark_id,
       },
     });
 
@@ -635,12 +633,13 @@ const processEmail = async () => {
       );
 
       // Format the fetched verses
-      const formattedMessage = is_language
-        ? formatVersesWithEnglishAndArabic(verses)
-        : formatVersesWithArabic(verses);
+      const message = formatQuranEmailTemplate(
+        verses,
+        is_language ? true : false
+      );
 
       // Send email
-      sendEmail(email, formattedMessage, "Your Verse for Today");
+      sendEmail(email, message, "Your Verse for Today");
 
       // Determine the new surah and verse for the next email
       const lastFetchedVerse = verses[verses.length - 1];
@@ -683,6 +682,6 @@ module.exports = {
   initiateDonation,
   verifyDonation,
   createBookmark,
-  getUserBookmarks,
+  getBookmarks,
   deleteBookmark,
 };
