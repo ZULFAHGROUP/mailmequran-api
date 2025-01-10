@@ -391,7 +391,8 @@ const createCustomerPreference = async (request, response, next) => {
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
     }
-
+    //check that the time is not lagging behind teh schedule time
+    
     const preference_id = uuidv4();
     await Preferences.create(
       {

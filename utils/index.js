@@ -122,7 +122,7 @@ const formatQuranEmailTemplate = (verses, showEnglish) => {
       
       <!-- Image Section -->
       <div style="text-align: center; margin-top: 10px;">
-        <img src="" alt="Quranic Scene" style="max-width: 100%; height: auto; border-radius: 8px;">
+        <img src="../../constants/emailTemplate.png" alt="Quranic Scene" style="max-width: 100%; height: auto; border-radius: 8px;">
       </div>
 
       <!-- Header Section -->
