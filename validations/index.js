@@ -9,7 +9,7 @@ const createCustomerValidation = (data) => {
       .min(6)
       .pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>])(?=^\S+$).{6,}$/)
       .required(),
-    repeatPassword: Joi.string()
+    confirmPassword: Joi.string()
       .min(6)
       .pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>])(?=^\S+$).{6,}$/)
       .valid(Joi.ref("password"))
@@ -102,7 +102,7 @@ const preferenceValidation = (data) => {
     timezone: Joi.string().max(100).required(),
     frequency: Joi.string().valid("daily", "weekly", "monthly").required(),
     schedule_time: Joi.string()
-      .pattern(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, "HH:mm:ss")
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/, "HH:mm")
       .required(),
     start_date: Joi.date().required(),
   });

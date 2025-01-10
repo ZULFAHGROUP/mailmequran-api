@@ -61,11 +61,11 @@ const createCustomer = async (request, response, next) => {
 
     if (customerExistence != null) throw new Error(messages.CUSTOMER_EXIST);
     if (tempCustomerExistence != null) {
-      const errData = new Error();
-      errData.message =
+      const errorData = new Error();
+      errorData.message =
         "An account with this email has already been created please verify with otp";
-      errData.isVerify = messages.OTP_VERIFY_CODE;
-      throw errData;
+      errorData.isVerify = messages.SECURED_SECRET_CODE;
+      throw errorData;
     }
 
     const [hash, salt] = await hashPassword(password);
@@ -153,7 +153,7 @@ const verifyEmail = async (request, response, next) => {
     sendEmail(email, message, "MAIL ME QURAN Email Verification Successful");
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.CUSTOMER_CREATED,
     });
   } catch (error) {
@@ -187,9 +187,10 @@ const resendOtp = async (request, response, next) => {
     const message = formatOtpMessage(newOtp);
     sendEmail(email, message, "MAIL ME QURAN Email Verification");
 
-    response
-      .status(statusCode.OK)
-      .json({ message: "New OTP generated and sent successfully." });
+    response.status(statusCode.OK).json({
+      message: "New OTP generated and sent successfully.",
+      success: true,
+    });
   } catch (error) {
     next(error);
   }
@@ -216,11 +217,12 @@ const login = async (request, response, next) => {
     if (!match) throw new Error(messages.INVALID_CREDENTIALS);
 
     const token = await generateJwtToken(email, jwtExpiringTime);
-    response.setHeader("access_token", token);
+
+    response.header("access_token", token);
+    console.log();
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.LOGIN_SUCCESS,
-      data: token,
     });
   } catch (error) {
     next(error);
@@ -248,7 +250,7 @@ const updateCustomer = async (request, response, next) => {
     });
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.CUSTOMER_UPDATED,
     });
   } catch (error) {
@@ -258,24 +260,36 @@ const updateCustomer = async (request, response, next) => {
 
 const getCustomer = async (request, response, next) => {
   try {
-    const { customer_id } = request.params;
-    const customer = await Customers.findOne({
-      where: { customer_id: customer_id },
-      attributes: {
-        exclude: [
-          "sn",
-          "customer_id",
-          "password_hash",
-          "password_salt",
-          "updated_at",
-        ],
-      },
-    });
+    const { customer_id } = request.params; // retrieve customer_id from the middleware
+
+    // Fetch customer data and email logs in parallel
+    const [customer, emailLogs, preferences] = await Promise.all([
+      Customers.findOne({
+        where: { customer_id: customer_id },
+        attributes: ["surname", "othernames"], 
+      }),
+      Email_logs.findOne({
+        where: { customer_id: customer_id },
+        attributes: ["verse_completed", "surah_completed"], 
+      }),
+      Preferences.findOne({
+        where: { customer_id: customer_id },
+        attributes: ["frequency", "daily_verse_count","schedule_time"], 
+      }),
+    ]);
+
+    // Combine the results
+    const UserData = {
+      surname: customer.surname,
+      other_name: customer.other_name,
+      email_logs: emailLogs || {},
+      preferences: preferences || {},
+    };
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.CUSTOMER_FOUND,
-      data: customer,
+      data: UserData,
     });
   } catch (error) {
     next(error);
@@ -301,7 +315,7 @@ const startForgetPassword = async (request, response, next) => {
     sendEmail(email, message, "Password Reset");
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: "Forget Password request sent successfully",
     });
   } catch (error) {
@@ -349,7 +363,7 @@ const completeForgetPassword = async (request, response, next) => {
     sendEmail(email, message, "Password Reset Successful");
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.PASSWORD_RESET_SUCCESS,
     });
   } catch (error) {
@@ -399,6 +413,7 @@ const createCustomerPreference = async (request, response, next) => {
     await Email_logs.create(
       {
         preference_id: preference_id,
+        customer_id: customer_id,
         last_sent_surah: start_surah,
         last_sent_verse: start_verse,
         next_sending_date: start_date,
@@ -407,7 +422,7 @@ const createCustomerPreference = async (request, response, next) => {
     );
     await transaction.commit();
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.CUSTOMER_PREFERENCE_CREATED,
     });
   } catch (error) {
@@ -454,7 +469,7 @@ const updatePreference = async (request, response, next) => {
     await transaction.commit();
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.CUSTOMER_PREFERENCE_UPDATED,
     });
   } catch (error) {
@@ -466,7 +481,7 @@ const randomVerse = async (request, response, next) => {
   try {
     const data = await generateRandomVerse();
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.RANDOM_VERSE_FOUND,
       data: data,
     });
@@ -486,7 +501,7 @@ const initiateDonation = async (request, response, next) => {
     const response = await initializePayment(email, amount);
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: "Payment initialized successfully",
       data: {
         payment_url: response.data.data.authorization_url,
@@ -508,7 +523,7 @@ const verifyDonation = async (request, response, next) => {
       throw new Error("Invalid transaction or payment failed");
     }
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.DONATED_SUCCESS,
     });
   } catch (error) {
@@ -537,7 +552,7 @@ const createBookmark = async (request, response, next) => {
     });
 
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.BOOKMARK_CREATED,
       data: bookmark,
     });
@@ -557,7 +572,7 @@ const getBookmarks = async (request, response, next) => {
       },
     });
     response.status(statusCode.OK).json({
-      status: true,
+      success: true,
       message: messages.BOOKMARKS_FETCHED,
       data: bookmarks,
     });
@@ -578,7 +593,7 @@ const deleteBookmark = async (request, response, next) => {
     });
 
     response.status(statusCode).json({
-      status: true,
+      success: true,
       message: messages.BOOKMARK_DELETED,
     });
   } catch (error) {
@@ -646,12 +661,18 @@ const processEmail = async () => {
       const nextSurah = lastFetchedVerse.chapter;
       const nextVerse = lastFetchedVerse.verse + 1;
 
+      // Increment surah_completed if the surah has changed
+      const updatedSurahCompleted =
+        nextSurah > currentSurah ? surah_completed + 1 : surah_completed;
+
       // Update email log
       Email_logs.update(
         {
           last_sent_surah: nextSurah,
           last_sent_verse: nextVerse,
           next_sending_date: calculateNextSendingDate(frequency),
+          verse_complete: verse_completed + daily_verse_count,
+          surah_completed: updatedSurahCompleted,
         },
         { where: { preference_id } }
       );
@@ -661,7 +682,7 @@ const processEmail = async () => {
   }
 };
 
-cron.schedule("*/2 * * * *", async () => {
+cron.schedule("*/59 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");

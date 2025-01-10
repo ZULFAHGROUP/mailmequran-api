@@ -1,4 +1,5 @@
 require("dotenv").config();
+const cors = require("cors");
 const express = require("express");
 const app = express();
 const displayRoutes = require("express-routemap");
@@ -8,6 +9,9 @@ const statusCode = require("./constants/statusCode");
 const customerRoutes = require("./routes/customer_routes");
 
 app.use(express.json());
+app.use(cors());
+app.use(cors({ exposedHeaders: ["access_token"] }));
+app.options("*", cors());
 app.use(customerRoutes);
 
 app.get("/", (request, response) => {

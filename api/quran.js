@@ -60,6 +60,13 @@ const getVerses = async (surah, verse, verseCount, languages) => {
   }
 };
 
+
+
+
+ 
+
+
+
 module.exports = {
   getVerses,
   generateRandomVerse,

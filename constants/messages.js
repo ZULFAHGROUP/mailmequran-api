@@ -17,7 +17,7 @@ const Messages = {
   SOMETHING_WENT_WRONG: "Something went wrong. Please try again later.",
   INVALID_CREDENTIALS: "Invalid credentials",
   UNAUTHORIZED: "Unauthorized Access",
-  OTP_VERIFY_CODE: "009",
+  SECURED_SECRET_CODE: "009",
   DONATED_SUCCESS:
     "Payment received successfully..May Allah never forsake you and May He grant you goodness............Jazak Allah khair",
 };
