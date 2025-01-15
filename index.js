@@ -40,19 +40,19 @@ try {
 app.use((error, request, response, next) => {
   if (error.sqlMessage || error.sqlState) {
     return response.status(statusCode.INTERNAL_SERVER_ERROR).json({
-      status: "error",
+      status: "failed",
       message: messages.SOMETHING_WENT_WRONG,
     });
   } else {
     if (error.isVerify) {
       return response.status(statusCode.BAD_REQUEST).json({
-        status: "error",
+        status: "failed",
         message: error.message,
         isVerify: error.isVerify,
       });
     } else {
       return response.status(error.code || statusCode.BAD_REQUEST).json({
-        status: "error",
+        status: "failed",
         message: error.message,
       });
     }

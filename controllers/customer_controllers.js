@@ -59,12 +59,18 @@ const createCustomer = async (request, response, next) => {
       TemporaryCustomers.findOne({ where: { email } }),
     ]);
 
-    if (customerExistence != null) throw new Error(messages.CUSTOMER_EXIST);
+    if (customerExistence != null) {
+      const errorData = new Error();
+      errorData.message =
+        "An account with this email has already been created please login your credentials";
+      errorData.isVerify = messages.CUSTOMER_CODE_EXIST;
+      throw errorData;
+    }
     if (tempCustomerExistence != null) {
       const errorData = new Error();
       errorData.message =
         "An account with this email has already been created please verify with otp";
-      errorData.isVerify = messages.SECURED_SECRET_CODE;
+      errorData.isVerify = messages.CUSTOMER_CODE_VERIFY;
       throw errorData;
     }
 
@@ -89,7 +95,7 @@ const createCustomer = async (request, response, next) => {
     sendEmail(email, message, "MAIL ME QURAN Email Verification");
 
     response.status(statusCode.CREATED).json({
-      success: true,
+      status: "success",
       message: messages.OTP_SENT,
     });
   } catch (error) {
@@ -153,7 +159,7 @@ const verifyEmail = async (request, response, next) => {
     sendEmail(email, message, "MAIL ME QURAN Email Verification Successful");
 
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.CUSTOMER_CREATED,
     });
   } catch (error) {
@@ -189,7 +195,7 @@ const resendOtp = async (request, response, next) => {
 
     response.status(statusCode.OK).json({
       message: "New OTP generated and sent successfully.",
-      success: true,
+      status: "success",
     });
   } catch (error) {
     next(error);
@@ -221,7 +227,7 @@ const login = async (request, response, next) => {
     response.header("access_token", token);
     console.log();
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.LOGIN_SUCCESS,
     });
   } catch (error) {
@@ -250,7 +256,7 @@ const updateCustomer = async (request, response, next) => {
     });
 
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.CUSTOMER_UPDATED,
     });
   } catch (error) {
@@ -262,34 +268,15 @@ const getCustomer = async (request, response, next) => {
   try {
     const { customer_id } = request.params; // retrieve customer_id from the middleware
 
-    // Fetch customer data and email logs in parallel
-    const [customer, emailLogs, preferences] = await Promise.all([
-      Customers.findOne({
-        where: { customer_id: customer_id },
-        attributes: ["surname", "othernames"], 
-      }),
-      Email_logs.findOne({
-        where: { customer_id: customer_id },
-        attributes: ["verse_completed", "surah_completed"], 
-      }),
-      Preferences.findOne({
-        where: { customer_id: customer_id },
-        attributes: ["frequency", "daily_verse_count","schedule_time"], 
-      }),
-    ]);
-
-    // Combine the results
-    const UserData = {
-      surname: customer.surname,
-      other_name: customer.other_name,
-      email_logs: emailLogs || {},
-      preferences: preferences || {},
-    };
+    const customerData = Customers.findOne({
+      where: { customer_id: customer_id },
+      attributes: ["surname"],
+    });
 
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.CUSTOMER_FOUND,
-      data: UserData,
+      data: customerData,
     });
   } catch (error) {
     next(error);
@@ -315,8 +302,9 @@ const startForgetPassword = async (request, response, next) => {
     sendEmail(email, message, "Password Reset");
 
     response.status(statusCode.OK).json({
-      success: true,
-      message: "Forget Password request sent successfully",
+      status: "success",
+      message:
+        "Forget Password request sent successfully, check your email for OTP",
     });
   } catch (error) {
     next(error);
@@ -335,7 +323,7 @@ const completeForgetPassword = async (request, response, next) => {
 
     // Check if email exists in customer table to abort early
     const customer = await Customers.findOne({ where: { email } });
-    if (customer == null) throw new Error(messages.SOMETHING_WENT_WRONG);
+    if (customer == null) throw new Error("No record found for this credentials provided");
 
     const checkIfEmailAndOtpExist = await Otp.findOne({
       where: { email: email, otp_code: otp },
@@ -360,10 +348,11 @@ const completeForgetPassword = async (request, response, next) => {
 
     //send email
     const message = formatPasswordResetSuccessMessage();
+
     sendEmail(email, message, "Password Reset Successful");
 
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.PASSWORD_RESET_SUCCESS,
     });
   } catch (error) {
@@ -375,6 +364,13 @@ const createCustomerPreference = async (request, response, next) => {
   const transaction = await sequelize.transaction();
   try {
     const { customer_id, email } = request.params; // retrieve customer_id from the middleware
+    //check if preference already exists
+    const preference = await Preference.findOne({
+      where: { customer_id },
+    });
+    if (preference !== null) {
+      throw new Error(messages.PREFERENCE_ALREADY_EXISTS);
+    }
     const {
       daily_verse_count,
       start_surah,
@@ -391,8 +387,13 @@ const createCustomerPreference = async (request, response, next) => {
         error.details[0].message || messages.SOMETHING_WENT_WRONG
       );
     }
-    //check that the time is not lagging behind teh schedule time
-    
+    //check that the time is not lagging behind the schedule time
+    const currentTime = new Date();
+    const scheduleTime = new Date(schedule_time);
+    if (scheduleTime < currentTime) {
+      throw new Error(messages.SCHEDULE_TIME_INVALID);
+    }
+
     const preference_id = uuidv4();
     await Preferences.create(
       {
@@ -423,7 +424,7 @@ const createCustomerPreference = async (request, response, next) => {
     );
     await transaction.commit();
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.CUSTOMER_PREFERENCE_CREATED,
     });
   } catch (error) {
@@ -470,7 +471,7 @@ const updatePreference = async (request, response, next) => {
     await transaction.commit();
 
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.CUSTOMER_PREFERENCE_UPDATED,
     });
   } catch (error) {
@@ -482,7 +483,7 @@ const randomVerse = async (request, response, next) => {
   try {
     const data = await generateRandomVerse();
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.RANDOM_VERSE_FOUND,
       data: data,
     });
@@ -502,8 +503,8 @@ const initiateDonation = async (request, response, next) => {
     const response = await initializePayment(email, amount);
 
     response.status(statusCode.OK).json({
-      success: true,
-      message: "Payment initialized successfully",
+      status: "success",
+      message: "Payment initialized success fully",
       data: {
         payment_url: response.data.data.authorization_url,
         access_code: response.data.data.reference,
@@ -520,11 +521,11 @@ const verifyDonation = async (request, response, next) => {
 
     const response = await verifyPayment(reference);
 
-    if (response.data.data.status !== "success") {
+    if (response.data.data.status !== "status") {
       throw new Error("Invalid transaction or payment failed");
     }
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.DONATED_SUCCESS,
     });
   } catch (error) {
@@ -553,7 +554,7 @@ const createBookmark = async (request, response, next) => {
     });
 
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.BOOKMARK_CREATED,
       data: bookmark,
     });
@@ -573,7 +574,7 @@ const getBookmarks = async (request, response, next) => {
       },
     });
     response.status(statusCode.OK).json({
-      success: true,
+      status: "success",
       message: messages.BOOKMARKS_FETCHED,
       data: bookmarks,
     });
@@ -594,7 +595,7 @@ const deleteBookmark = async (request, response, next) => {
     });
 
     response.status(statusCode).json({
-      success: true,
+      status: "success",
       message: messages.BOOKMARK_DELETED,
     });
   } catch (error) {
@@ -651,7 +652,7 @@ const processEmail = async () => {
       // Format the fetched verses
       const message = formatQuranEmailTemplate(
         verses,
-        is_language ? true : false
+        is_language ? "success" : false
       );
 
       // Send email

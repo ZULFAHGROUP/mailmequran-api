@@ -1,4 +1,6 @@
 const Messages = {
+  CUSTOMER_CODE_EXIST: "007",
+  CUSTOMER_CODE_VERIFY: "009",
   CUSTOMER_CREATED: "Customer created successfully.",
   CUSTOMER_EXIST: "A customer already exists with this email.",
   CUSTOMER_UPDATED: "Customer updated successfully.",
@@ -20,6 +22,7 @@ const Messages = {
   SECURED_SECRET_CODE: "009",
   DONATED_SUCCESS:
     "Payment received successfully..May Allah never forsake you and May He grant you goodness............Jazak Allah khair",
+    PREFERENCE_ALREADY_EXIST: "Preference already exists for this email. kindly update if you have any changes",
 };
 
 module.exports = Messages;
