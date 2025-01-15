@@ -268,15 +268,15 @@ const getCustomer = async (request, response, next) => {
   try {
     const { customer_id } = request.params; // retrieve customer_id from the middleware
 
-    const customerData = Customers.findOne({
+    const customer = await Customers.findOne({
       where: { customer_id: customer_id },
-      attributes: ["surname"],
+      attributes: ["surname", "othernames", "email"],
     });
 
     response.status(statusCode.OK).json({
       status: "success",
       message: messages.CUSTOMER_FOUND,
-      data: customerData,
+      data: customer,
     });
   } catch (error) {
     next(error);
@@ -323,7 +323,8 @@ const completeForgetPassword = async (request, response, next) => {
 
     // Check if email exists in customer table to abort early
     const customer = await Customers.findOne({ where: { email } });
-    if (customer == null) throw new Error("No record found for this credentials provided");
+    if (customer == null)
+      throw new Error("No record found for this credentials provided");
 
     const checkIfEmailAndOtpExist = await Otp.findOne({
       where: { email: email, otp_code: otp },
