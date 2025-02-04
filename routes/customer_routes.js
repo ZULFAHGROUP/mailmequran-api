@@ -7,6 +7,7 @@ const {
   login,
   updateCustomer,
   getCustomer,
+  getCustomerPreferences,
   startForgetPassword,
   completeForgetPassword,
   createCustomerPreference,
@@ -29,6 +30,7 @@ router.get("/customer", authorization, getCustomer);
 router.patch("/customer/forget-password/:email", startForgetPassword);
 router.post("/customer/forget-password/complete", completeForgetPassword);
 router.post("/customer/preference", authorization, createCustomerPreference);
+router.get("/customer/preference", authorization, getCustomerPreferences);
 router.patch("/customer/preference", authorization, updatePreference);
 router.get("/customer/random-verse", randomVerse);
 router.post("/donation/initiate", initiateDonation);

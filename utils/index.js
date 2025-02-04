@@ -47,12 +47,12 @@ const generateJwtToken = (email, expiringTime) => {
 
 const formatOtpMessage = (otp) => {
   return `
-    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; max-width: 500px; margin: auto; text-align: center;">
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #00BE5F14; border: 1px solid #ddd; border-radius: 8px; max-width: 500px; margin: auto; text-align: center;">
       <h2 style="color: #34495e;">Your Verification Code</h2>
       <p style="font-size: 18px; color: #2c3e50; margin: 10px 0;">
         Use the code below to complete your email verification:
       </p>
-      <p style="font-size: 40px; font-weight: bold; color: #e74c3c; margin: 20px 0;">
+      <p style="font-size: 40px; font-weight: bold; color: #2E7D32; margin: 20px 0;">
         ${otp}
       </p>
       <p style="font-size: 18px; color: #95a5a6; margin: 10px 0;">
@@ -117,12 +117,12 @@ const formatPasswordResetSuccessMessage = () => {
 };
 
 const formatQuranEmailTemplate = (verses, showEnglish) => {
-  return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color: #ffffff; padding: 2rem">
-      <div style="font-size: 1.5rem; background-color: skyblue; padding: 10px;">logo</div>
+  return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color: #00BE5F14; padding: 2rem">
+      <div style="font-size: 1.5rem; background-color: #2E7D32; padding: 10px;">logo</div>
       
       <!-- Image Section -->
       <div style="text-align: center; margin-top: 10px;">
-        <img src="../../constants/emailTemplate.png" alt="Quranic Scene" style="max-width: 100%; height: auto; border-radius: 8px;">
+        <img src="https://zulfahacademy.com/static/media/mailmequran.png" alt="Quranic Scene" style="max-width: 100%; height: auto; border-radius: 8px;">
       </div>
 
       <!-- Header Section -->
@@ -140,15 +140,15 @@ const formatQuranEmailTemplate = (verses, showEnglish) => {
             verse.verse
           }</h3>
             
-            <p style="font-size: 54px; color: #8e44ad; text-align: right;">
-              <strong>Arabic:</strong> ${verse.ar}
+            <p style="font-size: 2rem; color: #145A32; text-align: right;">
+               ${verse.ar}
             </p>
             
             ${
               showEnglish
                 ? `
-              <p style="font-size: 16px; color: #34495e; text-align: left;">
-                <strong>English:</strong> ${verse.en}
+              <p style="font-size: 1rem; color: #34495e; text-align: left;">
+                 ${verse.en}
               </p>
             `
                 : ""
@@ -165,45 +165,6 @@ const formatQuranEmailTemplate = (verses, showEnglish) => {
       </div>
     </div>`;
 };
-
-//       <div style="text-align: center; margin-bottom: 20px;">
-//         <h2 style="color: #2c3e50; margin-bottom: 10px;">Your Daily Dose of Quranic Verses</h2>
-//         <p style="color: #7f8c8d; font-size: 14px;">Connecting you to the Quran, one verse at a time.</p>
-//       </div>
-//       <!-- Verse Section -->
-//       <div style="margin-bottom: 20px; text-align: center;">
-//         <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 10px;">
-//           Surah: ${verse.chapter}, Verse: ${verse.verse}
-//         </h3>
-//         <p style="font-size: 32px; color: #27ae60; line-height: 1.5;">
-//           <strong>${verse.ar}</strong>
-//         </p>
-//         <p style="font-size: 16px; color: #34495e; margin-top: 10px; line-height: 1.5;">
-//           <em>"${verse.en}"</em>
-//         </p>
-//       </div>
-
-//       <div style="margin-bottom: 20px; text-align: left;">
-//         <h4 style="color: #2c3e50;">Reflective Question:</h4>
-//         <p style="font-size: 14px; color: #7f8c8d;">
-//           "How can you apply this verse in your life today?"
-//         </p>
-//       </div>
-//       <div style="text-align: center; margin-top: 20px;">
-//         <a href="https://mailmequran/settings" style="background-color: #28a745; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px; font-size: 14px;">
-//           Update Delivery Settings
-//         </a>
-//         <a href="https://mailmequran/unsubscribe" style="background-color: #e74c3c; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px;">
-//           Unsubscribe
-//         </a>
-//       </div>
-//        <div style="text-align: center; margin-top: 20px; color: #95a5a6; font-size: 12px;">
-//         <p>May Allah (SWT) bless you for connecting with His words.</p>
-//       </div>
-//     </div>
-//   `;
-// };
-
 function getTotalVersesInSurah(surah) {
   const surahTotalVerses = {
     1: 7,

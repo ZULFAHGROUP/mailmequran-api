@@ -22,7 +22,9 @@ const Messages = {
   SECURED_SECRET_CODE: "009",
   DONATED_SUCCESS:
     "Payment received successfully..May Allah never forsake you and May He grant you goodness............Jazak Allah khair",
-    PREFERENCE_ALREADY_EXIST: "Preference already exists for this email. kindly update if you have any changes",
+  PREFERENCE_ALREADY_EXIST:
+    "Preference already exists for this email. kindly update if you have any changes",
+  PREFERENCE_ALREADY_EXISTS: "Preference already exists for this account Please update if you have any changes"
 };
 
 module.exports = Messages;

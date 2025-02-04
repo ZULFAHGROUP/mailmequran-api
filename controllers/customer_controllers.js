@@ -105,6 +105,7 @@ const createCustomer = async (request, response, next) => {
 
 const verifyEmail = async (request, response, next) => {
   const transaction = await sequelize.transaction();
+  console.log("Transaction started");
   try {
     const { email, otp } = request.params;
     const { error } = verifyEmailAndOtpValidation(request.params);
@@ -225,7 +226,6 @@ const login = async (request, response, next) => {
     const token = await generateJwtToken(email, jwtExpiringTime);
 
     response.header("access_token", token);
-    console.log();
     response.status(statusCode.OK).json({
       status: "success",
       message: messages.LOGIN_SUCCESS,
@@ -366,7 +366,7 @@ const createCustomerPreference = async (request, response, next) => {
   try {
     const { customer_id, email } = request.params; // retrieve customer_id from the middleware
     //check if preference already exists
-    const preference = await Preference.findOne({
+    const preference = await Preferences.findOne({
       where: { customer_id },
     });
     if (preference !== null) {
@@ -394,6 +394,7 @@ const createCustomerPreference = async (request, response, next) => {
     if (scheduleTime < currentTime) {
       throw new Error(messages.SCHEDULE_TIME_INVALID);
     }
+
 
     const preference_id = uuidv4();
     await Preferences.create(
@@ -427,6 +428,55 @@ const createCustomerPreference = async (request, response, next) => {
     response.status(statusCode.OK).json({
       status: "success",
       message: messages.CUSTOMER_PREFERENCE_CREATED,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getCustomerPreferences = async (request, response, next) => {
+  try {
+    const { customer_id } = request.params;
+
+    const [preferences, emailLogs] = await Promise.all([
+      Preferences.findOne({
+        where: { customer_id },
+        attributes: [
+          "daily_verse_count",
+          "start_surah",
+          "start_verse",
+          "frequency",
+          "schedule_time",
+          "start_date",
+          "is_language",
+          "timezone",
+          
+        ],
+        raw: true, // Return plain object instead of Sequelize instance
+      }),
+      Email_logs.findOne({
+        where: { customer_id },
+        attributes: [
+          "last_sent_surah",
+          "last_sent_verse",
+          "next_sending_date",
+          "verse_completed",
+          "surah_completed",
+          "created_at",
+          "updated_at",
+        ],
+        raw: true, // Return plain array of objects
+      }),
+    ]);
+
+    // Combine preferences with email logs
+    const result = preferences ? preferences : {};
+    preferences ? (result.emailLogs = emailLogs) : {};
+
+    response.status(200).json({
+      status: "success",
+      message: "Customer preferences and email logs retrieved successfully",
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -608,20 +658,19 @@ const processEmail = async () => {
   try {
     // Fetch customer logs and preferences
     const customerLogsAndPreferences = await fetchLogsAndPreferences();
-    console.log(customerLogsAndPreferences);
     if (customerLogsAndPreferences === undefined) return;
-    // console.log(typeof customerLogsAndPreferences);
 
-    //converting a single result to an array if it return a single result if it return multiple then it will be an array
     const normalizedResults = Array.isArray(customerLogsAndPreferences)
       ? customerLogsAndPreferences
       : [customerLogsAndPreferences];
 
     const filteredResult = normalizedResults.filter((log) => {
-      const scheduleTime = log.schedule_time;
-      const scheduleMinute = moment(scheduleTime).minute();
-      const currentMinute = moment().minute();
-      return currentMinute === scheduleMinute;
+      const scheduleTime = moment(log.schedule_time, "HH:mm:ss");
+      const currentTime = moment();
+      return (
+        scheduleTime.hours() === currentTime.hours() &&
+        scheduleTime.minutes() === currentTime.minutes()
+      );
     });
 
     if (filteredResult.length === 0) return;
@@ -637,6 +686,8 @@ const processEmail = async () => {
         frequency,
         last_sent_surah,
         last_sent_verse,
+        surah_completed,
+        verse_completed,
       } = log;
 
       let currentSurah = last_sent_surah;
@@ -647,7 +698,7 @@ const processEmail = async () => {
         currentSurah,
         currentVerse,
         daily_verse_count,
-        is_language ? [is_language, "ar"] : ["ar"]
+        is_language ? ["ar", is_language] : ["ar"]
       );
 
       // Format the fetched verses
@@ -674,7 +725,7 @@ const processEmail = async () => {
           last_sent_surah: nextSurah,
           last_sent_verse: nextVerse,
           next_sending_date: calculateNextSendingDate(frequency),
-          verse_complete: verse_completed + daily_verse_count,
+          verse_completed: verse_completed + daily_verse_count,
           surah_completed: updatedSurahCompleted,
         },
         { where: { preference_id } }
@@ -685,7 +736,7 @@ const processEmail = async () => {
   }
 };
 
-cron.schedule("*/59 * * * *", async () => {
+cron.schedule("*/1 * * * *", async () => {
   console.log("Cron job started: Processing daily emails...");
   await processEmail();
   console.log("Cron job completed: Emails sent.");
@@ -698,6 +749,7 @@ module.exports = {
   login,
   updateCustomer,
   getCustomer,
+  getCustomerPreferences,
   startForgetPassword,
   completeForgetPassword,
   createCustomerPreference,

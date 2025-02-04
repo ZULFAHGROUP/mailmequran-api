@@ -7,11 +7,14 @@ const sequelize = require("./config/db");
 const messages = require("./constants/messages");
 const statusCode = require("./constants/statusCode");
 const customerRoutes = require("./routes/customer_routes");
+const options = {
+  origin: "*",
+  methods: "GET, POST, PATCH, DELETE,HEAD",
+  exposedHeaders: ["access_token"],
+};
 
 app.use(express.json());
-app.use(cors());
-app.use(cors({ exposedHeaders: ["access_token"] }));
-app.options("*", cors());
+app.use(cors(options));
 app.use(customerRoutes);
 
 app.get("/", (request, response) => {

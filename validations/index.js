@@ -118,8 +118,8 @@ const updatePreferenceValidation = (data) => {
     timezone: Joi.string().max(100).optional(),
     frequency: Joi.string().valid("daily", "weekly", "monthly").optional(),
     schedule_time: Joi.string()
-      .pattern(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, "HH:mm:ss")
-      .optional(),
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/, "HH:mm")
+      .required(),
     start_date: Joi.date().optional(),
   }).min(1);
   return updatePreferenceSchema.validate(data);
